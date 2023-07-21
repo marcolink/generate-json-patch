@@ -1,4 +1,4 @@
-type JsonObject = {[Key in string]: JsonValue} & {[Key in string]?: JsonValue | undefined};
+type JsonObject = { [Key in string]: JsonValue } & { [Key in string]?: JsonValue | undefined };
 
 type JsonArray = JsonValue[] | readonly JsonValue[];
 
@@ -28,12 +28,13 @@ export interface MoveOperation extends BaseOperation {
     op: "move";
     from: string;
 }
-
+// We do not generate those
 export interface CopyOperation extends BaseOperation {
     op: "copy";
     from: string;
 }
 
+// We do not generate those
 export interface TestOperation<T = any> extends BaseOperation {
     op: "test";
     value: T;
@@ -49,9 +50,15 @@ export type Operation =
 
 export type Patch = Operation[];
 
-type Direction = 'left' | 'right'
-interface Config {
-    comparator?: (obj: JsonValue, direction: Direction) => string;
+type Context = 'left' | 'right'
+
+/**
+ * @param {comparator}
+ * @param {propertyFilter}
+ **/
+export type JsonPatchConfig = {
+    comparator?: (obj: JsonValue, context: Context) => string;
+    propertyFilter?: (propertyName: string, context: Context) => boolean;
 }
 
 function isPrimitiveValue(value: JsonValue): boolean {
@@ -67,24 +74,27 @@ function isPrimitiveValue(value: JsonValue): boolean {
 export function generateJsonPatch(
     before: JsonValue,
     after: JsonValue,
-    config: Config = {}
+    config: JsonPatchConfig = {}
 ): Patch {
-    const {comparator} = config;
+    const {comparator, propertyFilter} = config;
     const patch: Patch = [];
+    const hasPropertyFilter = typeof propertyFilter === 'function';
 
-    function compareArrayByIndex(arr1: JsonArray, arr2: JsonArray, newPath: string) {
+
+    // TODO: detect move by reference or identical primitive value, this should be a config flag
+    function compareArrayByIndex(leftArr: JsonArray, rightArr: JsonArray, newPath: string) {
         let currentIndex = 0;
-        const maxLength = Math.max(arr1.length, arr2.length);
+        const maxLength = Math.max(leftArr.length, rightArr.length);
         for (let i = 0; i < maxLength; i++) {
             const newPathIndex = `${newPath}/${currentIndex++}`;
             // we have elements on both sides
-            if (i < arr1.length && i < arr2.length) {
-                compareObjects(newPathIndex, arr1[i], arr2[i]);
+            if (i < leftArr.length && i < rightArr.length) {
+                compareObjects(newPathIndex, leftArr[i], rightArr[i]);
                 // we only have elements on arr 2
-            } else if (i >= arr1.length && i < arr2.length) {
-                patch.push({op: "add", path: newPathIndex, value: arr2[i]});
+            } else if (i >= leftArr.length && i < rightArr.length) {
+                patch.push({op: "add", path: newPathIndex, value: rightArr[i]});
                 // we only have elements on arr 1
-            } else if (i < arr1.length && i >= arr2.length) {
+            } else if (i < leftArr.length && i >= rightArr.length) {
                 patch.push({op: "remove", path: newPathIndex});
                 // we need to decrement the current index for further operations
                 currentIndex--;
@@ -92,31 +102,32 @@ export function generateJsonPatch(
         }
     }
 
-    function compareArrayByHash(arr1: JsonArray, arr2: JsonArray, newPath: string) {
+    function compareArrayByHash(leftArr: JsonArray, rightArr: JsonArray, newPath: string) {
         if (!comparator) {
             throw Error('No hash function provided')
         }
 
-        const arr1Hashes = arr1.map((value) => comparator(value, 'left'));
-        const arr2Hashes = arr2.map((value) => comparator(value, 'right'));
+        const left1Hashes = leftArr.map((value) => comparator(value, 'left'));
+        const rightHashes = rightArr.map((value) => comparator(value, 'right'));
         let currentIndex = 0;
 
+        // TODO: implement remove here
         const notMatchedIndex: number[] = [];
         const shouldMove = [];
 
-        for (let i = 0; i < arr1Hashes.length; i++) {
+        for (let i = 0; i < left1Hashes.length; i++) {
             const newPathIndex = `${newPath}/${currentIndex++}`;
-            const arr2HashIndex = arr2Hashes.indexOf(arr1Hashes[i]);
-            if (arr2HashIndex >= 0) {
+            const rightHashIndex = rightHashes.indexOf(left1Hashes[i]);
+            if (rightHashIndex >= 0) {
                 // matched by hash (exists on both sides) - compare elements
-                compareObjects(newPathIndex, arr1[i], arr2[arr2HashIndex]);
-                if (i !== arr2HashIndex) {
+                compareObjects(newPathIndex, leftArr[i], rightArr[rightHashIndex]);
+                if (i !== rightHashIndex) {
                     // matching hashes, but different indexes
-                    shouldMove.push(arr1Hashes[i]);
+                    shouldMove.push(left1Hashes[i]);
                 }
             } else {
                 // only exists on arr1, has to be added to arr2
-                patch.push({op: "add", path: newPathIndex, value: arr2[i]});
+                patch.push({op: "add", path: newPathIndex, value: rightArr[i]});
             }
         }
 
@@ -149,12 +160,14 @@ export function generateJsonPatch(
         }
 
         // if one of the current values is an array, we can't go deeper
-        if(Array.isArray(o1) && !Array.isArray(o2) || !Array.isArray(o1) && Array.isArray(o2)){
+        if (Array.isArray(o1) && !Array.isArray(o2) || !Array.isArray(o1) && Array.isArray(o2)) {
             patch.push({op: "replace", path: path, value: o2});
             return;
         }
 
         for (const key in o2) {
+            if (hasPropertyFilter && !propertyFilter(key, 'right')) continue;
+
             let newPath = isArrayAtTop && path === "" ? `/${key}` : `${path}/${key}`;
             const obj1Value = o1[key];
             const obj2Value = o2[key];
@@ -175,7 +188,7 @@ export function generateJsonPatch(
         }
 
         for (const key in o1) {
-            if (!o1.hasOwnProperty(key)) continue;
+            if (!o1.hasOwnProperty(key) || (hasPropertyFilter && !propertyFilter(key, 'left'))) continue;
 
             if (!o2.hasOwnProperty(key)) {
                 let newPath =
