@@ -2,9 +2,9 @@ type JsonObject = {[Key in string]: JsonValue} & {[Key in string]?: JsonValue | 
 
 type JsonArray = JsonValue[] | readonly JsonValue[];
 
-type JsonPrimitive = string | number | boolean | null;
+type JsonPrimitive = string | number | boolean | null | undefined;
 
-type JsonValue = JsonPrimitive | JsonObject | JsonArray;
+export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
 export interface BaseOperation {
     path: string;
@@ -54,6 +54,16 @@ interface Config {
     comparator?: (obj: JsonValue, direction: Direction) => string;
 }
 
+function isPrimitiveValue(value: JsonValue): boolean {
+    return (
+        value === null ||
+        typeof value === "undefined" ||
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+    );
+}
+
 export function generateJsonPatch(
     before: JsonValue,
     after: JsonValue,
@@ -61,23 +71,6 @@ export function generateJsonPatch(
 ): Patch {
     const {comparator} = config;
     const patch: Patch = [];
-
-    function isScalar(value: JsonValue): boolean {
-        return (
-            value === null ||
-            typeof value === "undefined" ||
-            typeof value === "string" ||
-            typeof value === "number" ||
-            typeof value === "boolean"
-        );
-    }
-
-    function getComparatorHash(obj: JsonValue, direction: Direction): string {
-        if (comparator && typeof obj === "object" && obj !== null) {
-            return comparator(obj, direction);
-        }
-        return 'unknown';
-    }
 
     function compareArrayByIndex(arr1: JsonArray, arr2: JsonArray, newPath: string) {
         let currentIndex = 0;
@@ -100,12 +93,12 @@ export function generateJsonPatch(
     }
 
     function compareArrayByHash(arr1: JsonArray, arr2: JsonArray, newPath: string) {
-        if (!getComparatorHash) {
+        if (!comparator) {
             throw Error('No hash function provided')
         }
 
-        const arr1Hashes = arr1.map((value) => getComparatorHash(value, 'left'));
-        const arr2Hashes = arr2.map((value) => getComparatorHash(value, 'right'));
+        const arr1Hashes = arr1.map((value) => comparator(value, 'left'));
+        const arr2Hashes = arr2.map((value) => comparator(value, 'right'));
         let currentIndex = 0;
 
         const notMatchedIndex: number[] = [];
@@ -142,9 +135,9 @@ export function generateJsonPatch(
 
     function compareObjects(path: string, o1: any, o2: any) {
         const isArrayAtTop =
-            path === "" && (Array.isArray(o1) || Array.isArray(o2));
+            path === "" && (Array.isArray(o1) && Array.isArray(o2));
 
-        if (isScalar(o1) && isScalar(o2)) {
+        if (isPrimitiveValue(o1) && isPrimitiveValue(o2)) {
             if (o1 !== o2) {
                 patch.push({op: "replace", path: path, value: o2});
             }
@@ -153,6 +146,12 @@ export function generateJsonPatch(
 
         if (isArrayAtTop) {
             return compareArrays(o1, o2, "");
+        }
+
+        // if one of the current values is an array, we can't go deeper
+        if(Array.isArray(o1) && !Array.isArray(o2) || !Array.isArray(o1) && Array.isArray(o2)){
+            patch.push({op: "replace", path: path, value: o2});
+            return;
         }
 
         for (const key in o2) {
