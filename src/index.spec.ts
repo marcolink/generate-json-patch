@@ -50,8 +50,8 @@ describe('a generate json patch function', () => {
             ]
         ],
         ['replaces a deep nested object property along an array path',
-            {root: {first: [{}, {second: {third: 'before'}}]}},
-            {root: {first: [{}, {second: {third: 'after'}}]}},
+            {root: {first: [{}, {second: {third: 'before', list: ['hello', 'world']}}]}},
+            {root: {first: [{}, {second: {third: 'after', list: ['hello', 'world']}}]}},
             [{
                 op: 'replace',
                 path: '/root/first/1/second/third',
@@ -79,7 +79,7 @@ describe('a generate json patch function', () => {
                 path: '/root/3',
             }
             ]
-        ]
+        ],
     ]
     tests.forEach(([testTitle, beforeJson, afterJson, patch]) => {
         it(testTitle, () => {

@@ -107,7 +107,7 @@ export function generateJsonPatch(
             throw Error('No hash function provided')
         }
 
-        const left1Hashes = leftArr.map((value) => comparator(value, 'left'));
+        const leftHashes = leftArr.map((value) => comparator(value, 'left'));
         const rightHashes = rightArr.map((value) => comparator(value, 'right'));
         let currentIndex = 0;
 
@@ -115,15 +115,15 @@ export function generateJsonPatch(
         const notMatchedIndex: number[] = [];
         const shouldMove = [];
 
-        for (let i = 0; i < left1Hashes.length; i++) {
+        for (let i = 0; i < leftHashes.length; i++) {
             const newPathIndex = `${newPath}/${currentIndex++}`;
-            const rightHashIndex = rightHashes.indexOf(left1Hashes[i]);
+            const rightHashIndex = rightHashes.indexOf(leftHashes[i]);
             if (rightHashIndex >= 0) {
                 // matched by hash (exists on both sides) - compare elements
                 compareObjects(newPathIndex, leftArr[i], rightArr[rightHashIndex]);
                 if (i !== rightHashIndex) {
                     // matching hashes, but different indexes
-                    shouldMove.push(left1Hashes[i]);
+                    shouldMove.push(leftHashes[i]);
                 }
             } else {
                 // only exists on arr1, has to be added to arr2
@@ -136,63 +136,63 @@ export function generateJsonPatch(
         }
     }
 
-    function compareArrays(arr1: any[], arr2: any[], newPath: string) {
+    function compareArrays(leftArr: any[], rightArr: any[], newPath: string) {
         if (comparator) {
-            compareArrayByHash(arr1, arr2, newPath);
+            compareArrayByHash(leftArr, rightArr, newPath);
         } else {
-            compareArrayByIndex(arr1, arr2, newPath);
+            compareArrayByIndex(leftArr, rightArr, newPath);
         }
     }
 
-    function compareObjects(path: string, o1: any, o2: any) {
+    function compareObjects(path: string, leftObj: any, rightObj: any) {
         const isArrayAtTop =
-            path === "" && (Array.isArray(o1) && Array.isArray(o2));
+            path === "" && (Array.isArray(leftObj) && Array.isArray(rightObj));
 
-        if (isPrimitiveValue(o1) && isPrimitiveValue(o2)) {
-            if (o1 !== o2) {
-                patch.push({op: "replace", path: path, value: o2});
+        if (isPrimitiveValue(leftObj) && isPrimitiveValue(rightObj)) {
+            if (leftObj !== rightObj) {
+                patch.push({op: "replace", path: path, value: rightObj});
             }
             return;
         }
 
         if (isArrayAtTop) {
-            return compareArrays(o1, o2, "");
+            return compareArrays(leftObj, rightObj, "");
         }
 
         // if one of the current values is an array, we can't go deeper
-        if (Array.isArray(o1) && !Array.isArray(o2) || !Array.isArray(o1) && Array.isArray(o2)) {
-            patch.push({op: "replace", path: path, value: o2});
+        if (Array.isArray(leftObj) && !Array.isArray(rightObj) || !Array.isArray(leftObj) && Array.isArray(rightObj)) {
+            patch.push({op: "replace", path: path, value: rightObj});
             return;
         }
 
-        for (const key in o2) {
-            if (hasPropertyFilter && !propertyFilter(key, 'right')) continue;
+        for (const rightKey in rightObj) {
+            if (hasPropertyFilter && !propertyFilter(rightKey, 'right')) continue;
 
-            let newPath = isArrayAtTop && path === "" ? `/${key}` : `${path}/${key}`;
-            const obj1Value = o1[key];
-            const obj2Value = o2[key];
+            let newPath = isArrayAtTop && path === "" ? `/${rightKey}` : `${path}/${rightKey}`;
+            const leftValue = leftObj[rightKey];
+            const rightValue = rightObj[rightKey];
 
-            if (Array.isArray(obj1Value) && Array.isArray(obj2Value)) {
-                compareArrays(obj1Value, obj2Value, newPath);
-            } else if (typeof obj2Value === "object" && obj2Value !== null) {
-                if (typeof obj1Value === "object" && obj1Value !== null) {
-                    compareObjects(newPath, obj1Value, obj2Value);
+            if (Array.isArray(leftValue) && Array.isArray(rightValue)) {
+                compareArrays(leftValue, rightValue, newPath);
+            } else if (typeof rightValue === "object" && rightValue !== null) {
+                if (typeof leftValue === "object" && leftValue !== null) {
+                    compareObjects(newPath, leftValue, rightValue);
                 } else {
-                    patch.push({op: "replace", path: newPath, value: obj2Value});
+                    patch.push({op: "replace", path: newPath, value: rightValue});
                 }
-            } else if (!o1.hasOwnProperty(key)) {
-                patch.push({op: "add", path: newPath, value: obj2Value});
-            } else if (obj1Value !== obj2Value) {
-                patch.push({op: "replace", path: newPath, value: obj2Value});
+            } else if (!leftObj.hasOwnProperty(rightKey)) {
+                patch.push({op: "add", path: newPath, value: rightValue});
+            } else if (leftValue !== rightValue) {
+                patch.push({op: "replace", path: newPath, value: rightValue});
             }
         }
 
-        for (const key in o1) {
-            if (!o1.hasOwnProperty(key) || (hasPropertyFilter && !propertyFilter(key, 'left'))) continue;
+        for (const leftKey in leftObj) {
+            if (!leftObj.hasOwnProperty(leftKey) || (hasPropertyFilter && !propertyFilter(leftKey, 'left'))) continue;
 
-            if (!o2.hasOwnProperty(key)) {
+            if (!rightObj.hasOwnProperty(leftKey)) {
                 let newPath =
-                    isArrayAtTop && path === "" ? `/${key}` : `${path}/${key}`;
+                    isArrayAtTop && path === "" ? `/${leftKey}` : `${path}/${leftKey}`;
                 patch.push({op: "remove", path: newPath});
             }
         }
