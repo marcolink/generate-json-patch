@@ -1,4 +1,4 @@
-import {generateJsonPatch, JsonValue, Patch} from "./index";
+import {generateJsonPatch, JsonValue, Patch, pathInfo} from "./index";
 import {applyPatch, deepClone} from "fast-json-patch";
 import {expect} from "chai";
 
@@ -88,7 +88,6 @@ describe('a generate json patch function', () => {
     })
 
     describe('with an array comparator', () => {
-
         it("handles changes with change and move on the same property", () => {
             const before = [
                 {id: 1, paramOne: "future", paramTwo: "past"},
@@ -223,7 +222,7 @@ describe('a generate json patch function', () => {
 
             const patch = generateJsonPatch(before, after, {
                 propertyFilter: function (propertyName, context) {
-                    if(context.path.split('/').length > 2) return true
+                    if(pathInfo(context.path).length > 2) return true
                     return propertyName !== 'ignoreMe'
                 }
             })
@@ -262,7 +261,3 @@ function expectIdentical(before: JsonValue, after: JsonValue, expectedPatch?: Pa
         expect(patch).to.be.eql(expectedPatch);
     }
 }
-
-//function expectPatch(before: JsonValue, after: JsonValue, patch: Patch) {
-//    expect(generateJsonPatch(before, after)).to.be.eql(patch);
-//}

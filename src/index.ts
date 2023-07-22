@@ -210,3 +210,14 @@ export function generateJsonPatch(
 
     return [...patch];
 }
+
+/**
+ * Utils
+ */
+
+export function pathInfo(path: string): { segments: string[]; length: number; last: string } {
+    const segments = path.split('/')
+    const length = segments.length
+    const last = segments[length - 1]
+    return { segments, length, last }
+}
