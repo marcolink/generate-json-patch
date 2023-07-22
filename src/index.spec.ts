@@ -66,15 +66,15 @@ describe('a generate json patch function', () => {
                 op: 'replace',
                 path: '/root/0/id',
                 value: 4
-            },{
+            }, {
                 op: 'replace',
                 path: '/root/1/id',
                 value: 3
-            },{
+            }, {
                 op: 'replace',
                 path: '/root/2/id',
                 value: 2
-            },{
+            }, {
                 op: 'remove',
                 path: '/root/3',
             }
@@ -100,7 +100,7 @@ describe('a generate json patch function', () => {
             ]
 
             const patch = generateJsonPatch(before, after, {
-                comparator: function (obj: any, direction) {
+                comparator: function (obj: any) {
                     return `${obj.id}`;
                 }
             })
@@ -132,8 +132,8 @@ describe('a generate json patch function', () => {
             ]
 
             const patch = generateJsonPatch(before, after, {
-                comparator: function (obj: any, direction) {
-                    if (obj.id === 1 && direction === 'right') {
+                comparator: function (obj: any, context) {
+                    if (obj.id === 1 && context.side === 'right') {
                         return '4'
                     }
                     return `${obj.id}`;
@@ -183,7 +183,7 @@ describe('a generate json patch function', () => {
             };
 
             const patch = generateJsonPatch(before, after, {
-                propertyFilter: function (propertyName, context) {
+                propertyFilter: function (propertyName) {
                     return propertyName !== 'ignoreMe'
                 }
             })
@@ -195,7 +195,54 @@ describe('a generate json patch function', () => {
                 paramTwo: {ignoreMe: 'before', doNotIgnoreMe: 'after'}
             });
         })
+
+        it('only respects the prop filter at a given length', () => {
+            const before = {
+                id: 1,
+                paramOne: "before",
+                paramTwo: {
+                    ignoreMe: 'before',
+                    doNotIgnoreMe: 'before',
+                    two: {
+                        ignoreMe: 'before'
+                    },
+                }
+            };
+
+            const after = {
+                id: 1,
+                paramOne: "after",
+                paramTwo: {
+                    ignoreMe: 'after',
+                    doNotIgnoreMe: 'after',
+                    two: {
+                        ignoreMe: 'after'
+                    },
+                }
+            };
+
+            const patch = generateJsonPatch(before, after, {
+                propertyFilter: function (propertyName, context) {
+                    if(context.path.split('/').length > 2) return true
+                    return propertyName !== 'ignoreMe'
+                }
+            })
+
+            const patched = doPatch(before, patch)
+            expect(patched).to.be.eql({
+                id: 1,
+                paramOne: "after",
+                paramTwo: {ignoreMe: 'before', doNotIgnoreMe: 'after',  two: {ignoreMe: 'after'}}
+            });
+
+            expect(patch).to.eql([
+                { op: 'replace', path: '/paramOne', value: 'after' },
+                { op: 'replace', path: '/paramTwo/doNotIgnoreMe', value: 'after' },
+                { op: 'replace', path: '/paramTwo/two/ignoreMe', value: 'after' }
+            ])
+        })
     })
+
 })
 
 function doPatch(json: JsonValue, patch: Patch) {

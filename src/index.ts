@@ -50,15 +50,22 @@ export type Operation =
 
 export type Patch = Operation[];
 
-type Context = 'left' | 'right'
+export type Context = {
+   side: 'left' | 'right',
+   path: string
+}
+
+export type Comparator = (obj: JsonValue, context: Context) => string;
+
+export type PropertyFilter = (propertyName: string, context: Context) => boolean;
 
 /**
  * @param {comparator}
  * @param {propertyFilter}
  **/
 export type JsonPatchConfig = {
-    comparator?: (obj: JsonValue, context: Context) => string;
-    propertyFilter?: (propertyName: string, context: Context) => boolean;
+    comparator?: Comparator;
+    propertyFilter?: PropertyFilter
 }
 
 function isPrimitiveValue(value: JsonValue): boolean {
@@ -80,13 +87,12 @@ export function generateJsonPatch(
     const patch: Patch = [];
     const hasPropertyFilter = typeof propertyFilter === 'function';
 
-
     // TODO: detect move by reference or identical primitive value, this should be a config flag
-    function compareArrayByIndex(leftArr: JsonArray, rightArr: JsonArray, newPath: string) {
+    function compareArrayByIndex(leftArr: JsonArray, rightArr: JsonArray, path: string) {
         let currentIndex = 0;
         const maxLength = Math.max(leftArr.length, rightArr.length);
         for (let i = 0; i < maxLength; i++) {
-            const newPathIndex = `${newPath}/${currentIndex++}`;
+            const newPathIndex = `${path}/${currentIndex++}`;
             // we have elements on both sides
             if (i < leftArr.length && i < rightArr.length) {
                 compareObjects(newPathIndex, leftArr[i], rightArr[i]);
@@ -102,13 +108,14 @@ export function generateJsonPatch(
         }
     }
 
-    function compareArrayByHash(leftArr: JsonArray, rightArr: JsonArray, newPath: string) {
-        if (!comparator) {
-            throw Error('No hash function provided')
+    // TODO: detect move by comparator
+    function compareArrayByHash(leftArr: JsonArray, rightArr: JsonArray, path: string) {
+        if (typeof comparator !== 'function') {
+            throw Error('No comparator function provided')
         }
 
-        const leftHashes = leftArr.map((value) => comparator(value, 'left'));
-        const rightHashes = rightArr.map((value) => comparator(value, 'right'));
+        const leftHashes = leftArr.map((value) => comparator(value, {side: "left", path}));
+        const rightHashes = rightArr.map((value) => comparator(value, {side: "right", path}));
         let currentIndex = 0;
 
         // TODO: implement remove here
@@ -116,7 +123,7 @@ export function generateJsonPatch(
         const shouldMove = [];
 
         for (let i = 0; i < leftHashes.length; i++) {
-            const newPathIndex = `${newPath}/${currentIndex++}`;
+            const newPathIndex = `${path}/${currentIndex++}`;
             const rightHashIndex = rightHashes.indexOf(leftHashes[i]);
             if (rightHashIndex >= 0) {
                 // matched by hash (exists on both sides) - compare elements
@@ -132,15 +139,15 @@ export function generateJsonPatch(
         }
 
         for (const i of notMatchedIndex) {
-            patch.push({op: "remove", path: `${newPath}/${i}`});
+            patch.push({op: "remove", path: `${path}/${i}`});
         }
     }
 
-    function compareArrays(leftArr: any[], rightArr: any[], newPath: string) {
+    function compareArrays(leftArr: any[], rightArr: any[], path: string) {
         if (comparator) {
-            compareArrayByHash(leftArr, rightArr, newPath);
+            compareArrayByHash(leftArr, rightArr, path);
         } else {
-            compareArrayByIndex(leftArr, rightArr, newPath);
+            compareArrayByIndex(leftArr, rightArr, path);
         }
     }
 
@@ -166,7 +173,7 @@ export function generateJsonPatch(
         }
 
         for (const rightKey in rightObj) {
-            if (hasPropertyFilter && !propertyFilter(rightKey, 'right')) continue;
+            if (hasPropertyFilter && !propertyFilter(rightKey, {side: "right", path})) continue;
 
             let newPath = isArrayAtTop && path === "" ? `/${rightKey}` : `${path}/${rightKey}`;
             const leftValue = leftObj[rightKey];
@@ -188,7 +195,8 @@ export function generateJsonPatch(
         }
 
         for (const leftKey in leftObj) {
-            if (!leftObj.hasOwnProperty(leftKey) || (hasPropertyFilter && !propertyFilter(leftKey, 'left'))) continue;
+            if (!leftObj.hasOwnProperty(leftKey) || (hasPropertyFilter
+                && !propertyFilter(leftKey, {side: "left", path}))) continue;
 
             if (!rightObj.hasOwnProperty(leftKey)) {
                 let newPath =
