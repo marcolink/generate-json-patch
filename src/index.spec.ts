@@ -14,14 +14,13 @@ const jsonValues = {
     arrayOfBooleans: [true, false, true],
     primitiveString: 'hello world',
     primitiveNumber: 42,
-    // primitiveUndefined: undefined, // TODO: is this a valid case as it currently breaks?
     primitiveNull: null,
     primitiveNumberZero: 0,
     primitiveBooleanTrue: true,
     primitiveBooleanFalse: false,
     jsonObjectWithFlatPropertiesAndStringValues: {a: 'a', b: 'b', c: 'c'},
     jsonObjectWithFlatPropertiesAndNumberValues: {a: 3, b: 2, c: 1},
-    jsonObjectWithFlatPropertiesAndMixedValues: {a: true, b: 'b', c: 12},
+    jsonObjectWithFlatPropertiesAndMixedValues: {a: true, b: 'b', c: 12}
 } as const
 
 describe('a generate json patch function', () => {
@@ -163,8 +162,8 @@ describe('a generate json patch function', () => {
 
             // as long as we do not support move, the result will be different from 'after' in its order
             expect(patched).to.be.eql([
+                {id: 2, paramOne: "current"},
                 {id: 1, paramOne: "current"},
-                {id: 2, paramOne: "current"}
             ]);
         })
 
@@ -195,25 +194,34 @@ describe('a generate json patch function', () => {
                 }
             })
 
+            // console.log({before, after, patch})
 
             expect(patch).to.be.eql([
                 {
-                    op: "add",
+                    op: "remove",
                     path: "/0",
-                    value: {
-                        id: 1,
-                        value: "after"
-                    }
                 },
                 {
                     op: "replace",
-                    path: "/1/value",
+                    path: "/0/value",
                     value: "after"
+                },
+                {
+                    op: "add",
+                    path: "/1",
+                    value: {
+                        id: 1, value: 'after'
+                    }
+                },
+                {
+                    op:'move',
+                    from:'/0',
+                    path: '/1'
                 }
             ]);
         })
 
-        it("handles changes with change and move on the same property detected by the direction param", () => {
+        it("handles changes with change and move on the same property and added elements", () => {
             const before = [
                 {
                     id: 1, value: 'left'
@@ -236,24 +244,66 @@ describe('a generate json patch function', () => {
                     id: 2, value: 'right'
                 },
                 {
-                    id: 5, value: 'right'
+                    id: 4, value: 'right'
                 },
             ]
 
             const patch = generateJsonPatch(before, after, {
-                comparator: function (obj: any, context) {
-                    if (obj.id === 1 && context.side === 'right') {
-                        return '4'
-                    }
+                comparator: function (obj: any) {
                     return `${obj.id}`;
-                }
+                },
             })
 
             const patched = doPatch(before, patch)
 
-            console.log({before, after, patch, patched})
+            expect(patched).to.eql(after)
+        })
 
-            expect(patched).to.eql([
+        it("handles changes with change and move on the same property and removed elements", () => {
+            const before = [
+                {
+                    id: 1, value: 'left'
+                },
+                {
+                    id: 2, value: 'left'
+                },
+                {
+                    id: 3, value: 'left'
+                }
+            ]
+            const after = [
+                {
+                    id: 3, value: 'right'
+                },
+                {
+                    id: 1, value: 'right'
+                }
+            ]
+
+            const patch = generateJsonPatch(before, after, {
+                comparator: function (obj: any) {
+                    return `${obj.id}`;
+                },
+            })
+
+            const patched = doPatch(before, patch)
+
+            expect(patched).to.eql(after)
+        })
+
+        it("handles changes with change and move on the same property and added/removed elements", () => {
+            const before = [
+                {
+                    id: 1, value: 'left'
+                },
+                {
+                    id: 2, value: 'left'
+                },
+                {
+                    id: 3, value: 'left'
+                }
+            ]
+            const after = [
                 {
                     id: 3, value: 'right'
                 },
@@ -261,28 +311,65 @@ describe('a generate json patch function', () => {
                     id: 1, value: 'right'
                 },
                 {
-                    id: 2, value: 'right'
+                    id: 5, value: 'right'
+                }
+            ]
+
+            const patch = generateJsonPatch(before, after, {
+                comparator: function (obj: any) {
+                    return `${obj.id}`;
+                },
+            })
+
+            const patched = doPatch(before, patch)
+
+            expect(patched).to.eql(after)
+        })
+
+        it("handles changes with on array but ignores moves", () => {
+            const before = [
+                {
+                    id: 1, value: 'left'
+                },
+                {
+                    id: 2, value: 'left'
+                },
+                {
+                    id: 3, value: 'left'
+                }
+            ]
+            const after = [
+                {
+                    id: 3, value: 'right'
+                },
+                {
+                    id: 1, value: 'right'
                 },
                 {
                     id: 5, value: 'right'
-                },
-            ])
-
-            expect(patch).to.be.eql([
-                {
-                    op: "add",
-                    path: "/0",
-                    value: {
-                        id: 3,
-                        value: "right"
-                    }
-                },
-                {
-                    op: "replace",
-                    path: "/1/value",
-                    value: "right"
                 }
-            ]);
+            ]
+
+            const patch = generateJsonPatch(before, after, {
+                comparator: function (obj: any) {
+                    return `${obj.id}`;
+                },
+                array:{ignoreMove: true}
+            })
+
+            const patched = doPatch(before, patch)
+
+            expect(patched).to.eql([
+                {
+                    id: 1, value: 'right'
+                },
+                {
+                    id: 3, value: 'right'
+                },
+                {
+                    id: 5, value: 'right'
+                }
+            ])
         })
     })
     describe('with property filter', () => {
@@ -319,7 +406,7 @@ describe('a generate json patch function', () => {
             });
         })
 
-        it('only respects the prop filter at a given length', () => {
+        it('only respects the prop filter at a given path length', () => {
             const before = {
                 id: 1,
                 paramOne: "before",

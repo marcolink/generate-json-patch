@@ -23,8 +23,8 @@
   "scripts": {
     "build": "tsup src/index.ts",
     "test": "ts-mocha -p tsconfig.json src/index.spec.ts",
-    "test-coverage": "nyc ts-mocha -p tsconfig.json src/index.spec.ts",
-    "test-watch": "npm run test -- -w --watch-files '**/*.ts'"
+    "test-watch": "npm run test -- -w --watch-files '**/*.ts'",
+    "test-coverage": "nyc npm run test"
   },
   "tsup": {
     "entry": [

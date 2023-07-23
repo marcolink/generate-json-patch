@@ -28,6 +28,7 @@ export interface MoveOperation extends BaseOperation {
     op: "move";
     from: string;
 }
+
 // We do not generate those
 export interface CopyOperation extends BaseOperation {
     op: "copy";
@@ -50,14 +51,14 @@ export type Operation =
 
 export type Patch = Operation[];
 
-export type Context = {
-   side: 'left' | 'right',
-   path: string
+export type GeneratePatchContext = {
+    side: 'left' | 'right',
+    path: string
 }
 
-export type Comparator = (obj: JsonValue, context: Context) => string;
+export type Comparator = (obj: JsonValue, context: GeneratePatchContext) => string;
 
-export type PropertyFilter = (propertyName: string, context: Context) => boolean;
+export type PropertyFilter = (propertyName: string, context: GeneratePatchContext) => boolean;
 
 /**
  * @param {comparator}
@@ -65,7 +66,8 @@ export type PropertyFilter = (propertyName: string, context: Context) => boolean
  **/
 export type JsonPatchConfig = {
     comparator?: Comparator;
-    propertyFilter?: PropertyFilter
+    propertyFilter?: PropertyFilter,
+    array?: { ignoreMove?: boolean }
 }
 
 export function generateJsonPatch(
@@ -78,6 +80,9 @@ export function generateJsonPatch(
     const hasPropertyFilter = typeof propertyFilter === 'function';
 
     // TODO: detect move by reference or identical primitive value, this should be a config flag
+    /*
+    Maybe we can just use a default compared for indexed array comparison that creates hashes of the value :thinking:
+     */
     function compareArrayByIndex(leftArr: JsonArray, rightArr: JsonArray, path: string) {
         let currentIndex = 0;
         const maxLength = Math.max(leftArr.length, rightArr.length);
@@ -108,34 +113,57 @@ export function generateJsonPatch(
         const rightHashes = rightArr.map((value) => comparator(value, {side: "right", path}));
         let currentIndex = 0;
 
-        // TODO: implement remove here
-        // const notMatchedIndex: number[] = [];
-        const shouldMove = [];
+        const targetHashes: string[] = []
+
 
         for (let i = 0; i < leftHashes.length; i++) {
             const newPathIndex = `${path}/${currentIndex++}`;
             const rightHashIndex = rightHashes.indexOf(leftHashes[i]);
+
+            // matched by hash (exists on both sides) - compare elements
             if (rightHashIndex >= 0) {
-                // matched by hash (exists on both sides) - compare elements
                 compareObjects(newPathIndex, leftArr[i], rightArr[rightHashIndex]);
-                if (i !== rightHashIndex) {
-                    // matching hashes, but different indexes
-                    shouldMove.push(leftHashes[i]);
-                }
+                targetHashes.push(leftHashes[i])
             } else {
-                // only exists on arr1, has to be added to arr2
-                patch.push({op: "add", path: newPathIndex, value: rightArr[i]});
+                // only exists on left, we remove it
+                patch.push({op: "remove", path: newPathIndex});
+                currentIndex--
             }
         }
 
-        /*
-        for (const i of notMatchedIndex) {
-            patch.push({op: "remove", path: `${path}/${i}`});
+        const toBeAddedHashes = rightHashes.filter(hash => !targetHashes.includes(hash))
+
+        for (const toBeAddedHash of toBeAddedHashes) {
+            patch.push({
+                op: "add",
+                path: `${path}/${currentIndex++}`,
+                value: rightArr[rightHashes.indexOf(toBeAddedHash)]
+            });
+            targetHashes.push(toBeAddedHash)
         }
-         */
+
+        if(config.array?.ignoreMove){
+            return
+        }
+
+        // we calculate all move operations and add them at the end.
+        // This way, we can always ignore them when we apply the resulting patch
+        for (let i = rightHashes.length - 1; i >= 0; i--) {
+            const hash = rightHashes[i]
+            const targetIndex = rightHashes.indexOf(hash)
+            const currentIndex = targetHashes.indexOf(hash)
+            if (currentIndex !== targetIndex) {
+                patch.push({op: "move", from: `${path}/${currentIndex}`, path: `${path}/${targetIndex}`})
+                moveArrayElement(targetHashes, currentIndex, targetIndex)
+            }
+        }
     }
 
     function compareArrays(leftArr: any[], rightArr: any[], path: string) {
+
+        // if arrays are equal, no further comparison is required
+        if(JSON.stringify(leftArr) === JSON.stringify(rightArr))return
+
         if (comparator) {
             compareArrayByHash(leftArr, rightArr, path);
         } else {
@@ -219,11 +247,16 @@ function isJsonObject(value: JsonValue): value is JsonObject {
     return value?.constructor === Object
 }
 
+function moveArrayElement(array: any[], from: number, to: number) {
+    array.splice(to, 0, array.splice(from, 1)[0]);
+}
+
 /**
  *
  * @property {string[]} segments first element will always be en empty string ("")
  */
 export type PathInfoResult = { segments: string[]; length: number; last: string }
+
 /**
  *
  * @param {string} path - a "/" separated path
@@ -233,5 +266,5 @@ export function pathInfo(path: string): PathInfoResult {
     const segments = path.split('/')
     const length = segments.length
     const last = segments[length - 1]
-    return { segments, length, last }
+    return {segments, length, last}
 }
