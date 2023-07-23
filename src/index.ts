@@ -1,8 +1,8 @@
-type JsonObject = { [Key in string]: JsonValue } & { [Key in string]?: JsonValue | undefined };
+type JsonObject = { [Key in string]: JsonValue } | { [Key in string]?: JsonValue };
 
 type JsonArray = JsonValue[] | readonly JsonValue[];
 
-type JsonPrimitive = string | number | boolean | null | undefined;
+type JsonPrimitive = string | number | boolean | null;
 
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
@@ -68,16 +68,6 @@ export type JsonPatchConfig = {
     propertyFilter?: PropertyFilter
 }
 
-function isPrimitiveValue(value: JsonValue): boolean {
-    return (
-        value === null ||
-        typeof value === "undefined" ||
-        typeof value === "string" ||
-        typeof value === "number" ||
-        typeof value === "boolean"
-    );
-}
-
 export function generateJsonPatch(
     before: JsonValue,
     after: JsonValue,
@@ -119,7 +109,7 @@ export function generateJsonPatch(
         let currentIndex = 0;
 
         // TODO: implement remove here
-        const notMatchedIndex: number[] = [];
+        // const notMatchedIndex: number[] = [];
         const shouldMove = [];
 
         for (let i = 0; i < leftHashes.length; i++) {
@@ -138,9 +128,11 @@ export function generateJsonPatch(
             }
         }
 
+        /*
         for (const i of notMatchedIndex) {
             patch.push({op: "remove", path: `${path}/${i}`});
         }
+         */
     }
 
     function compareArrays(leftArr: any[], rightArr: any[], path: string) {
@@ -151,11 +143,12 @@ export function generateJsonPatch(
         }
     }
 
+    // TODO: type input with JSONValue
     function compareObjects(path: string, leftObj: any, rightObj: any) {
         const isArrayAtTop =
             path === "" && (Array.isArray(leftObj) && Array.isArray(rightObj));
 
-        if (isPrimitiveValue(leftObj) && isPrimitiveValue(rightObj)) {
+        if (isPrimitiveValue(leftObj) || isPrimitiveValue(rightObj)) {
             if (leftObj !== rightObj) {
                 patch.push({op: "replace", path: path, value: rightObj});
             }
@@ -181,8 +174,8 @@ export function generateJsonPatch(
 
             if (Array.isArray(leftValue) && Array.isArray(rightValue)) {
                 compareArrays(leftValue, rightValue, newPath);
-            } else if (typeof rightValue === "object" && rightValue !== null) {
-                if (typeof leftValue === "object" && leftValue !== null) {
+            } else if (isJsonObject(rightValue)) {
+                if (isJsonObject(leftValue)) {
                     compareObjects(newPath, leftValue, rightValue);
                 } else {
                     patch.push({op: "replace", path: newPath, value: rightValue});
@@ -211,11 +204,32 @@ export function generateJsonPatch(
     return [...patch];
 }
 
-/**
- * Utils
- */
+function isPrimitiveValue(value: JsonValue): boolean {
+    return (
+        value === undefined ||
+        value === null ||
+        typeof value === "undefined" ||
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+    );
+}
 
-export function pathInfo(path: string): { segments: string[]; length: number; last: string } {
+function isJsonObject(value: JsonValue): value is JsonObject {
+    return value?.constructor === Object
+}
+
+/**
+ *
+ * @property {string[]} segments first element will always be en empty string ("")
+ */
+export type PathInfoResult = { segments: string[]; length: number; last: string }
+/**
+ *
+ * @param {string} path - a "/" separated path
+ * @returns {PathInfoResult}
+ */
+export function pathInfo(path: string): PathInfoResult {
     const segments = path.split('/')
     const length = segments.length
     const last = segments[length - 1]

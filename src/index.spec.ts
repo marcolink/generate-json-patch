@@ -1,13 +1,48 @@
-import {generateJsonPatch, JsonValue, Patch, pathInfo} from "./index";
+import type {JsonValue, Patch} from "./index";
+import {generateJsonPatch, pathInfo} from "./index";
 import {applyPatch, deepClone} from "fast-json-patch";
-import {expect} from "chai";
+import {assert, expect} from "chai";
 
 type Title = string;
 type Before = JsonValue;
 type After = JsonValue;
 type TestDefinition = [Title, Before, After, Patch]
 
+const jsonValues = {
+    arrayOfNumbers: [1, 2, 4],
+    arrayOfStrings: ['one', 'two', 'three'],
+    arrayOfBooleans: [true, false, true],
+    primitiveString: 'hello world',
+    primitiveNumber: 42,
+    // primitiveUndefined: undefined, // TODO: is this a valid case as it currently breaks?
+    primitiveNull: null,
+    primitiveNumberZero: 0,
+    primitiveBooleanTrue: true,
+    primitiveBooleanFalse: false,
+    jsonObjectWithFlatPropertiesAndStringValues: {a: 'a', b: 'b', c: 'c'},
+    jsonObjectWithFlatPropertiesAndNumberValues: {a: 3, b: 2, c: 1},
+    jsonObjectWithFlatPropertiesAndMixedValues: {a: true, b: 'b', c: 12},
+} as const
+
 describe('a generate json patch function', () => {
+    describe("can do all operations on different shaped JSON values", () => {
+        const keys = Object.keys(jsonValues);
+        const keyPairs = keys.flatMap(
+            (key, i) => keys.slice(i + 1).map(nextKey => [key, nextKey])
+        );
+
+        keyPairs.forEach(([keyOne, keyTwo]) => {
+            it(`${splitKey(keyOne)} becomes ${splitKey(keyTwo)}`, () => {
+                // @ts-ignore
+                expectPatchedEqualsAfter(jsonValues[keyOne], jsonValues[keyTwo])
+            })
+            it(`${splitKey(keyTwo)} becomes ${splitKey(keyOne)}`, () => {
+                // @ts-ignore
+                expectPatchedEqualsAfter(jsonValues[keyTwo], jsonValues[keyOne])
+            })
+        })
+    })
+
 
     const tests: TestDefinition[] = [
         ['adds root array elements', [1, 2, 3], [1, 2, 3, 4], [{op: 'add', path: '/3', value: 4}]],
@@ -82,12 +117,33 @@ describe('a generate json patch function', () => {
         ],
     ]
     tests.forEach(([testTitle, beforeJson, afterJson, patch]) => {
-        it(testTitle, () => {
-            expectIdentical(beforeJson, afterJson, patch)
+        describe(testTitle, () => {
+            it("patched 'before' equals 'after'", () => {
+                expectPatchedEqualsAfter(beforeJson, afterJson)
+            })
+            it("patch matches expected patch", () => {
+                expectPatch(beforeJson, afterJson, patch)
+            })
         })
     })
 
     describe('with an array comparator', () => {
+        it("throws when comparator is not a function", () => {
+            const before = [
+                {id: 1, paramOne: "before"},
+            ]
+            const after = [
+                {id: 2, paramOne: "after"},
+            ]
+
+            assert.throws(() => generateJsonPatch(before, after, {
+                // @ts-ignore
+                comparator: 'not-a-function'
+            }))
+
+        })
+
+
         it("handles changes with change and move on the same property", () => {
             const before = [
                 {id: 1, paramOne: "future", paramTwo: "past"},
@@ -115,18 +171,18 @@ describe('a generate json patch function', () => {
         it("handles changes with custom comparator based on direction param", () => {
             const before = [
                 {
-                    id: 1, value: 'left'
+                    id: 1, value: 'before'
                 },
                 {
-                    id: 2, value: 'left'
+                    id: 2, value: 'before'
                 }
             ]
             const after = [
                 {
-                    id: 1, value: 'right'
+                    id: 1, value: 'after'
                 },
                 {
-                    id: 2, value: 'right'
+                    id: 2, value: 'after'
                 }
             ]
 
@@ -146,6 +202,78 @@ describe('a generate json patch function', () => {
                     path: "/0",
                     value: {
                         id: 1,
+                        value: "after"
+                    }
+                },
+                {
+                    op: "replace",
+                    path: "/1/value",
+                    value: "after"
+                }
+            ]);
+        })
+
+        it("handles changes with change and move on the same property detected by the direction param", () => {
+            const before = [
+                {
+                    id: 1, value: 'left'
+                },
+                {
+                    id: 2, value: 'left'
+                },
+                {
+                    id: 3, value: 'left'
+                }
+            ]
+            const after = [
+                {
+                    id: 3, value: 'right'
+                },
+                {
+                    id: 1, value: 'right'
+                },
+                {
+                    id: 2, value: 'right'
+                },
+                {
+                    id: 5, value: 'right'
+                },
+            ]
+
+            const patch = generateJsonPatch(before, after, {
+                comparator: function (obj: any, context) {
+                    if (obj.id === 1 && context.side === 'right') {
+                        return '4'
+                    }
+                    return `${obj.id}`;
+                }
+            })
+
+            const patched = doPatch(before, patch)
+
+            console.log({before, after, patch, patched})
+
+            expect(patched).to.eql([
+                {
+                    id: 3, value: 'right'
+                },
+                {
+                    id: 1, value: 'right'
+                },
+                {
+                    id: 2, value: 'right'
+                },
+                {
+                    id: 5, value: 'right'
+                },
+            ])
+
+            expect(patch).to.be.eql([
+                {
+                    op: "add",
+                    path: "/0",
+                    value: {
+                        id: 3,
                         value: "right"
                     }
                 },
@@ -155,10 +283,6 @@ describe('a generate json patch function', () => {
                     value: "right"
                 }
             ]);
-        })
-
-        it.skip("handles changes with change and move on the same property detected by the direction param", () => {
-
         })
     })
     describe('with property filter', () => {
@@ -222,7 +346,7 @@ describe('a generate json patch function', () => {
 
             const patch = generateJsonPatch(before, after, {
                 propertyFilter: function (propertyName, context) {
-                    if(pathInfo(context.path).length > 2) return true
+                    if (pathInfo(context.path).length > 2) return true
                     return propertyName !== 'ignoreMe'
                 }
             })
@@ -231,17 +355,16 @@ describe('a generate json patch function', () => {
             expect(patched).to.be.eql({
                 id: 1,
                 paramOne: "after",
-                paramTwo: {ignoreMe: 'before', doNotIgnoreMe: 'after',  two: {ignoreMe: 'after'}}
+                paramTwo: {ignoreMe: 'before', doNotIgnoreMe: 'after', two: {ignoreMe: 'after'}}
             });
 
             expect(patch).to.eql([
-                { op: 'replace', path: '/paramOne', value: 'after' },
-                { op: 'replace', path: '/paramTwo/doNotIgnoreMe', value: 'after' },
-                { op: 'replace', path: '/paramTwo/two/ignoreMe', value: 'after' }
+                {op: 'replace', path: '/paramOne', value: 'after'},
+                {op: 'replace', path: '/paramTwo/doNotIgnoreMe', value: 'after'},
+                {op: 'replace', path: '/paramTwo/two/ignoreMe', value: 'after'}
             ])
         })
     })
-
 })
 
 function doPatch(json: JsonValue, patch: Patch) {
@@ -253,11 +376,17 @@ function doPatch(json: JsonValue, patch: Patch) {
     ).newDocument;
 }
 
-function expectIdentical(before: JsonValue, after: JsonValue, expectedPatch?: Patch) {
+function expectPatchedEqualsAfter(before: JsonValue, after: JsonValue) {
     const patch = generateJsonPatch(before, after)
     const patched = doPatch(before, patch)
     expect(patched).to.be.eql(after);
-    if (expectedPatch) {
-        expect(patch).to.be.eql(expectedPatch);
-    }
+}
+
+function expectPatch(before: JsonValue, after: JsonValue, expectedPatch: Patch) {
+    const patch = generateJsonPatch(before, after)
+    expect(patch).to.be.eql(expectedPatch);
+}
+
+function splitKey(input: string): string {
+    return input.split(/(?=[A-Z])/).map(s => s.toLowerCase()).join(' ');
 }
