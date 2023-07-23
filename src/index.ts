@@ -70,7 +70,7 @@ export type JsonPatchConfig = {
     array?: { ignoreMove?: boolean }
 }
 
-export function generateJsonPatch(
+export function generateJSONPatch(
     before: JsonValue,
     after: JsonValue,
     config: JsonPatchConfig = {}
@@ -81,7 +81,7 @@ export function generateJsonPatch(
 
     // TODO: detect move by reference or identical primitive value, this should be a config flag
     /*
-    Maybe we can just use a default compared for indexed array comparison that creates hashes of the value :thinking:
+    Maybe we can just use a default comparator for indexed array comparison that creates hashes of the value :thinking:
      */
     function compareArrayByIndex(leftArr: JsonArray, rightArr: JsonArray, path: string) {
         let currentIndex = 0;

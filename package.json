@@ -1,12 +1,12 @@
 {
   "name": "generate-json-patch",
-  "version": "0.0.1",
-  "author": "Marco Link",
+  "version": "0.0.2",
+  "author": "Marco Link <marcoxlink@gmail.com>",
   "private": false,
-  "repository": "marcolink/contentful-collection",
+  "repository": "marcolink/generate-json-patch",
   "homepage": "https://github.com/marcolink/generate-json-patch",
-  "license": "ISC",
-  "description": "A simple function to diff any object and generate a JSON Patch",
+  "license": "MIT",
+  "description": "A simple function to diff any two objects and generate a JSON Patch",
   "main": "dist/index.mjs",
   "typings": "dist/index.d.ts",
   "module": "dist/index.mjs",
@@ -20,6 +20,11 @@
     "import": "./dist/index.mjs",
     "node": "./dist/index.js"
   },
+  "keywords": [
+    "json",
+    "diff",
+    "patch"
+  ],
   "scripts": {
     "build": "tsup src/index.ts",
     "test": "ts-mocha -p tsconfig.json src/index.spec.ts",

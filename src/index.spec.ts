@@ -1,5 +1,5 @@
 import type {JsonValue, Patch} from "./index";
-import {generateJsonPatch, pathInfo} from "./index";
+import {generateJSONPatch, pathInfo} from "./index";
 import {applyPatch, deepClone} from "fast-json-patch";
 import {assert, expect} from "chai";
 
@@ -135,7 +135,7 @@ describe('a generate json patch function', () => {
                 {id: 2, paramOne: "after"},
             ]
 
-            assert.throws(() => generateJsonPatch(before, after, {
+            assert.throws(() => generateJSONPatch(before, after, {
                 // @ts-ignore
                 comparator: 'not-a-function'
             }))
@@ -153,7 +153,7 @@ describe('a generate json patch function', () => {
                 {id: 1, paramOne: "current"}
             ]
 
-            const patch = generateJsonPatch(before, after, {
+            const patch = generateJSONPatch(before, after, {
                 comparator: function (obj: any) {
                     return `${obj.id}`;
                 }
@@ -185,7 +185,7 @@ describe('a generate json patch function', () => {
                 }
             ]
 
-            const patch = generateJsonPatch(before, after, {
+            const patch = generateJSONPatch(before, after, {
                 comparator: function (obj: any, context) {
                     if (obj.id === 1 && context.side === 'right') {
                         return '4'
@@ -248,7 +248,7 @@ describe('a generate json patch function', () => {
                 },
             ]
 
-            const patch = generateJsonPatch(before, after, {
+            const patch = generateJSONPatch(before, after, {
                 comparator: function (obj: any) {
                     return `${obj.id}`;
                 },
@@ -280,7 +280,7 @@ describe('a generate json patch function', () => {
                 }
             ]
 
-            const patch = generateJsonPatch(before, after, {
+            const patch = generateJSONPatch(before, after, {
                 comparator: function (obj: any) {
                     return `${obj.id}`;
                 },
@@ -315,7 +315,7 @@ describe('a generate json patch function', () => {
                 }
             ]
 
-            const patch = generateJsonPatch(before, after, {
+            const patch = generateJSONPatch(before, after, {
                 comparator: function (obj: any) {
                     return `${obj.id}`;
                 },
@@ -350,7 +350,7 @@ describe('a generate json patch function', () => {
                 }
             ]
 
-            const patch = generateJsonPatch(before, after, {
+            const patch = generateJSONPatch(before, after, {
                 comparator: function (obj: any) {
                     return `${obj.id}`;
                 },
@@ -392,7 +392,7 @@ describe('a generate json patch function', () => {
                 }
             };
 
-            const patch = generateJsonPatch(before, after, {
+            const patch = generateJSONPatch(before, after, {
                 propertyFilter: function (propertyName) {
                     return propertyName !== 'ignoreMe'
                 }
@@ -431,7 +431,7 @@ describe('a generate json patch function', () => {
                 }
             };
 
-            const patch = generateJsonPatch(before, after, {
+            const patch = generateJSONPatch(before, after, {
                 propertyFilter: function (propertyName, context) {
                     if (pathInfo(context.path).length > 2) return true
                     return propertyName !== 'ignoreMe'
@@ -464,13 +464,13 @@ function doPatch(json: JsonValue, patch: Patch) {
 }
 
 function expectPatchedEqualsAfter(before: JsonValue, after: JsonValue) {
-    const patch = generateJsonPatch(before, after)
+    const patch = generateJSONPatch(before, after)
     const patched = doPatch(before, patch)
     expect(patched).to.be.eql(after);
 }
 
 function expectPatch(before: JsonValue, after: JsonValue, expectedPatch: Patch) {
-    const patch = generateJsonPatch(before, after)
+    const patch = generateJSONPatch(before, after)
     expect(patch).to.be.eql(expectedPatch);
 }
 
