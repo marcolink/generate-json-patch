@@ -1,8 +1,8 @@
-type JsonObject = { [Key in string]: JsonValue } | { [Key in string]?: JsonValue };
+export type JsonObject = { [Key in string]: JsonValue } | { [Key in string]?: JsonValue };
 
-type JsonArray = JsonValue[] | readonly JsonValue[];
+export type JsonArray = JsonValue[] | readonly JsonValue[];
 
-type JsonPrimitive = string | number | boolean | null;
+export type JsonPrimitive = string | number | boolean | null;
 
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
@@ -29,13 +29,11 @@ export interface MoveOperation extends BaseOperation {
     from: string;
 }
 
-// We do not generate those
 export interface CopyOperation extends BaseOperation {
     op: "copy";
     from: string;
 }
 
-// We do not generate those
 export interface TestOperation<T = any> extends BaseOperation {
     op: "test";
     value: T;
@@ -56,16 +54,12 @@ export type GeneratePatchContext = {
     path: string
 }
 
-export type Comparator = (obj: JsonValue, context: GeneratePatchContext) => string;
+export type ObjectHash = (obj: JsonValue, context: GeneratePatchContext) => string;
 
 export type PropertyFilter = (propertyName: string, context: GeneratePatchContext) => boolean;
 
-/**
- * @param {comparator}
- * @param {propertyFilter}
- **/
 export type JsonPatchConfig = {
-    comparator?: Comparator;
+    objectHash?: ObjectHash;
     propertyFilter?: PropertyFilter,
     array?: { ignoreMove?: boolean }
 }
@@ -75,13 +69,13 @@ export function generateJSONPatch(
     after: JsonValue,
     config: JsonPatchConfig = {}
 ): Patch {
-    const {comparator, propertyFilter} = config;
+    const {objectHash, propertyFilter} = config;
     const patch: Patch = [];
     const hasPropertyFilter = typeof propertyFilter === 'function';
 
     // TODO: detect move by reference or identical primitive value, this should be a config flag
     /*
-    Maybe we can just use a default comparator for indexed array comparison that creates hashes of the value :thinking:
+    Maybe we can just use a default objectHash for indexed array comparison that creates hashes of the value :thinking:
      */
     function compareArrayByIndex(leftArr: JsonArray, rightArr: JsonArray, path: string) {
         let currentIndex = 0;
@@ -103,18 +97,16 @@ export function generateJSONPatch(
         }
     }
 
-    // TODO: detect move by comparator
     function compareArrayByHash(leftArr: JsonArray, rightArr: JsonArray, path: string) {
-        if (typeof comparator !== 'function') {
-            throw Error('No comparator function provided')
+        if (typeof objectHash !== 'function') {
+            throw Error('No objectHash function provided')
         }
 
-        const leftHashes = leftArr.map((value) => comparator(value, {side: "left", path}));
-        const rightHashes = rightArr.map((value) => comparator(value, {side: "right", path}));
+        const leftHashes = leftArr.map((value) => objectHash(value, {side: "left", path}));
+        const rightHashes = rightArr.map((value) => objectHash(value, {side: "right", path}));
         let currentIndex = 0;
 
         const targetHashes: string[] = []
-
 
         for (let i = 0; i < leftHashes.length; i++) {
             const newPathIndex = `${path}/${currentIndex++}`;
@@ -142,7 +134,7 @@ export function generateJSONPatch(
             targetHashes.push(toBeAddedHash)
         }
 
-        if(config.array?.ignoreMove){
+        if(config.array?.ignoreMove) {
             return
         }
 
@@ -153,52 +145,55 @@ export function generateJSONPatch(
             const targetIndex = rightHashes.indexOf(hash)
             const currentIndex = targetHashes.indexOf(hash)
             if (currentIndex !== targetIndex) {
-                patch.push({op: "move", from: `${path}/${currentIndex}`, path: `${path}/${targetIndex}`})
+                patch.push({
+                    op: "move",
+                    from: `${path}/${currentIndex}`,
+                    path: `${path}/${targetIndex}`
+                })
+                // updates reference array
                 moveArrayElement(targetHashes, currentIndex, targetIndex)
             }
         }
     }
 
     function compareArrays(leftArr: any[], rightArr: any[], path: string) {
-
         // if arrays are equal, no further comparison is required
-        if(JSON.stringify(leftArr) === JSON.stringify(rightArr))return
+        if(JSON.stringify(leftArr) === JSON.stringify(rightArr)) return
 
-        if (comparator) {
+        if (objectHash) {
             compareArrayByHash(leftArr, rightArr, path);
         } else {
             compareArrayByIndex(leftArr, rightArr, path);
         }
     }
 
-    // TODO: type input with JSONValue
-    function compareObjects(path: string, leftObj: any, rightObj: any) {
+    function compareObjects(path: string, leftJsonValue: any, rightJsonValue: any) {
         const isArrayAtTop =
-            path === "" && (Array.isArray(leftObj) && Array.isArray(rightObj));
+            path === "" && [leftJsonValue, rightJsonValue].every(Array.isArray);
 
-        if (isPrimitiveValue(leftObj) || isPrimitiveValue(rightObj)) {
-            if (leftObj !== rightObj) {
-                patch.push({op: "replace", path: path, value: rightObj});
+        if (isPrimitiveValue(leftJsonValue) || isPrimitiveValue(rightJsonValue)) {
+            if (leftJsonValue !== rightJsonValue) {
+                patch.push({op: "replace", path: path, value: rightJsonValue});
             }
             return;
         }
 
         if (isArrayAtTop) {
-            return compareArrays(leftObj, rightObj, "");
+            return compareArrays(leftJsonValue, rightJsonValue, "");
         }
 
         // if one of the current values is an array, we can't go deeper
-        if (Array.isArray(leftObj) && !Array.isArray(rightObj) || !Array.isArray(leftObj) && Array.isArray(rightObj)) {
-            patch.push({op: "replace", path: path, value: rightObj});
+        if ([leftJsonValue, rightJsonValue].some(Array.isArray)) {
+            patch.push({op: "replace", path: path, value: rightJsonValue});
             return;
         }
 
-        for (const rightKey in rightObj) {
+        for (const rightKey in rightJsonValue) {
             if (hasPropertyFilter && !propertyFilter(rightKey, {side: "right", path})) continue;
 
             let newPath = isArrayAtTop && path === "" ? `/${rightKey}` : `${path}/${rightKey}`;
-            const leftValue = leftObj[rightKey];
-            const rightValue = rightObj[rightKey];
+            const leftValue = leftJsonValue[rightKey];
+            const rightValue = rightJsonValue[rightKey];
 
             if (Array.isArray(leftValue) && Array.isArray(rightValue)) {
                 compareArrays(leftValue, rightValue, newPath);
@@ -208,18 +203,18 @@ export function generateJSONPatch(
                 } else {
                     patch.push({op: "replace", path: newPath, value: rightValue});
                 }
-            } else if (!leftObj.hasOwnProperty(rightKey)) {
+            } else if (!leftJsonValue.hasOwnProperty(rightKey)) {
                 patch.push({op: "add", path: newPath, value: rightValue});
             } else if (leftValue !== rightValue) {
                 patch.push({op: "replace", path: newPath, value: rightValue});
             }
         }
 
-        for (const leftKey in leftObj) {
-            if (!leftObj.hasOwnProperty(leftKey) || (hasPropertyFilter
+        for (const leftKey in leftJsonValue) {
+            if (!leftJsonValue.hasOwnProperty(leftKey) || (hasPropertyFilter
                 && !propertyFilter(leftKey, {side: "left", path}))) continue;
 
-            if (!rightObj.hasOwnProperty(leftKey)) {
+            if (!rightJsonValue.hasOwnProperty(leftKey)) {
                 let newPath =
                     isArrayAtTop && path === "" ? `/${leftKey}` : `${path}/${leftKey}`;
                 patch.push({op: "remove", path: newPath});
@@ -232,7 +227,7 @@ export function generateJSONPatch(
     return [...patch];
 }
 
-function isPrimitiveValue(value: JsonValue): boolean {
+function isPrimitiveValue(value: JsonValue): value is JsonValue {
     return (
         value === undefined ||
         value === null ||
@@ -247,21 +242,12 @@ function isJsonObject(value: JsonValue): value is JsonObject {
     return value?.constructor === Object
 }
 
-function moveArrayElement(array: any[], from: number, to: number) {
+function moveArrayElement(array: any[], from: number, to: number): void {
     array.splice(to, 0, array.splice(from, 1)[0]);
 }
 
-/**
- *
- * @property {string[]} segments first element will always be en empty string ("")
- */
 export type PathInfoResult = { segments: string[]; length: number; last: string }
 
-/**
- *
- * @param {string} path - a "/" separated path
- * @returns {PathInfoResult}
- */
 export function pathInfo(path: string): PathInfoResult {
     const segments = path.split('/')
     const length = segments.length

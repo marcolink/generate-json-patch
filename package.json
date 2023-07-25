@@ -1,6 +1,6 @@
 {
   "name": "generate-json-patch",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "author": "Marco Link <marcoxlink@gmail.com>",
   "private": false,
   "repository": "marcolink/generate-json-patch",
@@ -23,7 +23,10 @@
   "keywords": [
     "json",
     "diff",
-    "patch"
+    "patch",
+    "compare",
+    "generate",
+    "create"
   ],
   "scripts": {
     "build": "tsup src/index.ts",

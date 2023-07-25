@@ -127,7 +127,7 @@ describe('a generate json patch function', () => {
     })
 
     describe('with an array comparator', () => {
-        it("throws when comparator is not a function", () => {
+        it("throws when objectHash is not a function", () => {
             const before = [
                 {id: 1, paramOne: "before"},
             ]
@@ -137,7 +137,7 @@ describe('a generate json patch function', () => {
 
             assert.throws(() => generateJSONPatch(before, after, {
                 // @ts-ignore
-                comparator: 'not-a-function'
+                objectHash: 'not-a-function'
             }))
 
         })
@@ -154,7 +154,7 @@ describe('a generate json patch function', () => {
             ]
 
             const patch = generateJSONPatch(before, after, {
-                comparator: function (obj: any) {
+                objectHash: function (obj: any) {
                     return `${obj.id}`;
                 }
             })
@@ -167,7 +167,7 @@ describe('a generate json patch function', () => {
             ]);
         })
 
-        it("handles changes with custom comparator based on direction param", () => {
+        it("handles changes with custom objectHash based on direction param", () => {
             const before = [
                 {
                     id: 1, value: 'before'
@@ -186,7 +186,7 @@ describe('a generate json patch function', () => {
             ]
 
             const patch = generateJSONPatch(before, after, {
-                comparator: function (obj: any, context) {
+                objectHash: function (obj: any, context) {
                     if (obj.id === 1 && context.side === 'right') {
                         return '4'
                     }
@@ -249,7 +249,7 @@ describe('a generate json patch function', () => {
             ]
 
             const patch = generateJSONPatch(before, after, {
-                comparator: function (obj: any) {
+                objectHash: function (obj: any) {
                     return `${obj.id}`;
                 },
             })
@@ -281,7 +281,7 @@ describe('a generate json patch function', () => {
             ]
 
             const patch = generateJSONPatch(before, after, {
-                comparator: function (obj: any) {
+                objectHash: function (obj: any) {
                     return `${obj.id}`;
                 },
             })
@@ -316,7 +316,7 @@ describe('a generate json patch function', () => {
             ]
 
             const patch = generateJSONPatch(before, after, {
-                comparator: function (obj: any) {
+                objectHash: function (obj: any) {
                     return `${obj.id}`;
                 },
             })
@@ -351,7 +351,7 @@ describe('a generate json patch function', () => {
             ]
 
             const patch = generateJSONPatch(before, after, {
-                comparator: function (obj: any) {
+                objectHash: function (obj: any) {
                     return `${obj.id}`;
                 },
                 array:{ignoreMove: true}
