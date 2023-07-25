@@ -4,10 +4,10 @@ Create [RFC 6902](https://datatracker.ietf.org/doc/html/rfc6902/) compliant JSON
 
 [![Version](https://img.shields.io/npm/v/generate-json-patch.svg)](https://npmjs.org/package/generate-json-patch)
 [![Downloads/week](https://img.shields.io/npm/dw/generate-json-patch.svg)](https://npmjs.org/package/generate-json-patch)
+[![Size](https://img.shields.io/bundlephobia/min/generate-json-patch.svg)](https://npmjs.org/package/generate-json-patch)
 [![Tests](https://github.com/marcolink/generate-json-patch/workflows/CI%20Tests/badge.svg?branch=main)](https://github.com/marcolink/generate-json-patch/actions/workflows/test.yml)
 [![License](https://img.shields.io/npm/l/generate-json-patch.svg)](https://github.com/marcoxlink/generate-json-patch/blob/main/package.json)
 [![TypeScript](https://img.shields.io/badge/%3C%2F%3E-TypeScript-%230074c1.svg)](http://www.typescriptlang.org/)
-
 # TL;DR
 - Can diff any two [JSON](https://www.ecma-international.org/publications-and-standards/standards/ecma-404/)  compliant objects - returns differences as [JSON Patch](http://jsonpatch.com/).
 - Elegant array diffing by providing an `objectHash` to match array elements
