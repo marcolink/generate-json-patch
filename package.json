@@ -32,7 +32,15 @@
     "build": "tsup src/index.ts",
     "test": "ts-mocha -p tsconfig.json src/index.spec.ts",
     "test-watch": "npm run test -- -w --watch-files '**/*.ts'",
-    "test-coverage": "nyc npm run test"
+    "test-coverage": "nyc npm run test",
+    "lint": "eslint --ext .ts ./src",
+    "lint-fix": "npm run lint -- --fix"
+  },
+  "prettier": {
+    "printWidth": 80,
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "es5"
   },
   "tsup": {
     "entry": [
@@ -48,7 +56,12 @@
   "devDependencies": {
     "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^6.2.0",
+    "@typescript-eslint/parser": "^6.2.0",
     "chai": "^4.3.7",
+    "eslint": "^8.45.0",
+    "eslint-config-prettier": "^8.9.0",
+    "eslint-plugin-prettier": "^5.0.0",
     "fast-json-patch": "^3.1.1",
     "mocha-ts": "^0.0.0",
     "nyc": "^15.1.0",
