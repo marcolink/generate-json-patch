@@ -200,8 +200,10 @@ export function generateJSONPatch(
             } else if (isJsonObject(rightValue)) {
                 if (isJsonObject(leftValue)) {
                     compareObjects(newPath, leftValue, rightValue);
-                } else {
+                } else if(leftJsonValue.hasOwnProperty(rightKey)){
                     patch.push({op: "replace", path: newPath, value: rightValue});
+                } else {
+                    patch.push({op: "add", path: newPath, value: rightValue});
                 }
             } else if (!leftJsonValue.hasOwnProperty(rightKey)) {
                 patch.push({op: "add", path: newPath, value: rightValue});

@@ -167,6 +167,27 @@ describe('a generate json patch function', () => {
             ]);
         })
 
+        it("handles changes on array objects with different shape", () => {
+            const before = [
+                {id: 1, paramOne: "current"}
+            ]
+            const after = [
+                {id: 1, paramOne: "future", paramTwo: "past", paramThree: {nested: 'some text'}},
+            ]
+
+            const patch = generateJSONPatch(before, after, {
+                objectHash: function (obj: any) {
+                    return `${obj.id}`;
+                }
+            })
+            const patched = doPatch(before, patch)
+
+            // as long as we do not support move, the result will be different from 'after' in its order
+            expect(patched).to.be.eql([
+                {id: 1, paramOne: "future", paramTwo: "past", paramThree: {nested: 'some text'}},
+            ]);
+        })
+
         it("handles changes with custom objectHash based on direction param", () => {
             const before = [
                 {
@@ -214,8 +235,8 @@ describe('a generate json patch function', () => {
                     }
                 },
                 {
-                    op:'move',
-                    from:'/0',
+                    op: 'move',
+                    from: '/0',
                     path: '/1'
                 }
             ]);
@@ -354,7 +375,7 @@ describe('a generate json patch function', () => {
                 objectHash: function (obj: any) {
                     return `${obj.id}`;
                 },
-                array:{ignoreMove: true}
+                array: {ignoreMove: true}
             })
 
             const patched = doPatch(before, patch)
