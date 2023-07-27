@@ -30,8 +30,8 @@ npm install generate-json-patch
 ```typescript
 import { generateJSONPatch } from 'generate-json-patch';
 
-const before = { name: "Berta", manufacturer: "Ford", type: "Granada", year: 1972 };
-const after = { name: "Berta", manufacturer: "Ford", type: "Granada", year: 1974 };
+const before = { manufacturer: "Ford", type: "Granada", year: 1972 };
+const after = { manufacturer: "Ford", type: "Granada", year: 1974 };
 
 const patch = generateJSONPatch(before, after);
 
@@ -41,16 +41,19 @@ console.log(patch) // => [{op: 'replace', path: '/year', value: 1974}]
 ## Configuration
 
 ```typescript
-import { generateJSONPatch, JsonPatchConfig, JSONValue } from 'generate-json-patch';
+import { generateJSONPatch, JsonPatchConfig, JsonValue } from 'generate-json-patch';
 
 generateJSONPatch({/*...*/}, {/*...*/}, {
     // called when comparing array elements
-    objectHash: function(value: JSONValue, context: JsonPatchConfig) {
+    objectHash: function(value: JsonValue, context: GeneratePatchContext) {
+        // for arrays of primitive values like string and numbers, a stringification is sufficent:
+        // return JSON.stringify(value)
+        // If we know the shape of the value, we can match be specific properties
         return value.name
     },
     // called for every property on objects. Can be used to ignore sensitive or irrelevant 
     // properties when comparing data.
-    propertyFilter: function (propertyName: string, context: JsonPatchConfig) {
+    propertyFilter: function (propertyName: string, context: GeneratePatchContext) {
         return !['sensitiveProperty'].includes(propertyName);
     },
     array: {
@@ -62,6 +65,50 @@ generateJSONPatch({/*...*/}, {/*...*/}, {
 });
 ``` 
 
+### Patch Context
+Both config function (`objectHash`, `propertyFilter`), receive a patch context as second parameter.
+This allows for granular decision-making on the provided data.
+
+#### Example
+```typescript
+import {generateJSONPatch, JsonPatchConfig, JsonValue, pathInfo} from 'generate-json-patch';
+
+const before = {
+    manufacturer: "Ford",
+    type: "Granada",
+    colors: ['red', 'silver', 'yellow'],
+    engine: [
+        {name: 'Cologne V6 2.6', hp: 125},
+        {name: 'Cologne V6 2.0', hp: 90},
+        {name: 'Cologne V6 2.3', hp: 108},
+        {name: 'Essex V6 3.0', hp: 138},
+    ]
+}
+
+const after = {
+    manufacturer: "Ford",
+    type: "Granada",
+    colors: ['red', 'silver', 'yellow'],
+    engine: [
+        {name: 'Essex V6 3.0', hp: 138},
+        {name: 'Cologne V6 2.6', hp: 125},
+        {name: 'Cologne V6 2.0', hp: 90},
+        {name: 'Cologne V6 2.3', hp: 108},
+    ]
+}
+
+const patch = generateJSONPatch(before, after, {
+    objectHash: function (value: JsonValue, context: GeneratePatchContext) {
+        const {length, last} = pathInfo(context.path)
+        if (length === 2 && last === 'engine') {
+            return value.name
+        }
+        return JSON.stringify(value)
+    }
+});
+
+console.log(patch) // => [{op: 'replace', from: '/engine/3/hp', value: 140}]
+```
 
 > For more examples, check out the [tests](./src/index.spec.ts)
 

@@ -1,5 +1,5 @@
 import type { JsonValue, Patch } from './index';
-import { generateJSONPatch, pathInfo } from './index';
+import { generateJSONPatch, GeneratePatchContext, pathInfo } from './index';
 import { applyPatch, deepClone } from 'fast-json-patch';
 import { assert, expect } from 'chai';
 
@@ -208,7 +208,7 @@ describe('a generate json patch function', () => {
     });
   });
 
-  describe('with an array comparator', () => {
+  describe('with an array value hash function', () => {
     it('throws when objectHash is not a function', () => {
       const before = [{ id: 1, paramOne: 'before' }];
       const after = [{ id: 2, paramOne: 'after' }];
@@ -508,6 +508,47 @@ describe('a generate json patch function', () => {
           id: 5,
           value: 'right',
         },
+      ]);
+    });
+
+    it('runs context example from readme', () => {
+      const before = {
+        manufacturer: 'Ford',
+        type: 'Granada',
+        colors: ['red', 'silver', 'yellow'],
+        engine: [
+          { name: 'Cologne V6 2.6', hp: 125 },
+          { name: 'Cologne V6 2.0', hp: 90 },
+          { name: 'Cologne V6 2.3', hp: 108 },
+          { name: 'Essex V6 3.0', hp: 138 },
+        ],
+      };
+
+      const after = {
+        manufacturer: 'Ford',
+        type: 'Granada',
+        colors: ['red', 'silver', 'yellow'],
+        engine: [
+          { name: 'Cologne V6 2.6', hp: 125 },
+          { name: 'Cologne V6 2.0', hp: 90 },
+          { name: 'Cologne V6 2.3', hp: 108 },
+          { name: 'Essex V6 3.0', hp: 140 },
+        ],
+      };
+
+      const patch = generateJSONPatch(before, after, {
+        objectHash: function (value: JsonValue, context: GeneratePatchContext) {
+          const { length, last } = pathInfo(context.path);
+          if (length === 2 && last === 'engine') {
+            // @ts-ignore
+            return value?.name;
+          }
+          return JSON.stringify(value);
+        },
+      });
+
+      expect(patch).to.be.eql([
+        { op: 'replace', path: '/engine/3/hp', value: 140 },
       ]);
     });
   });
