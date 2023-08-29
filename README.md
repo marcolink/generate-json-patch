@@ -78,10 +78,10 @@ const before = {
     type: "Granada",
     colors: ['red', 'silver', 'yellow'],
     engine: [
-        {name: 'Cologne V6 2.6', hp: 125},
-        {name: 'Cologne V6 2.0', hp: 90},
-        {name: 'Cologne V6 2.3', hp: 108},
-        {name: 'Essex V6 3.0', hp: 138},
+        { name: 'Cologne V6 2.6', hp: 125 },
+        { name: 'Cologne V6 2.0', hp: 90 },
+        { name: 'Cologne V6 2.3', hp: 108 },
+        { name: 'Essex V6 3.0', hp: 138 },
     ]
 }
 
@@ -107,7 +107,11 @@ const patch = generateJSONPatch(before, after, {
     }
 });
 
-console.log(patch) // => [{op: 'replace', from: '/engine/3/hp', value: 140}]
+console.log(patch) // => [
+// { op: 'replace', path: '/engine/3/hp', value: 138 },
+// { op: 'move', from: '/engine/2',  path: '/engine/3' },
+// { op: 'move', from: '/engine/1',  path: '/engine/2' },
+// { op: 'move', from: '/engine/0',  path: '/engine/1' }]
 ```
 
 > For more examples, check out the [tests](./src/index.spec.ts)
