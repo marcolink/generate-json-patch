@@ -90,21 +90,25 @@ export function generateJSONPatch(
     rightArr: JsonArray,
     path: string
   ) {
-    let currentIndex = 0;
-    const maxLength = Math.max(leftArr.length, rightArr.length);
-    for (let i = 0; i < maxLength; i++) {
-      const newPathIndex = `${path}/${currentIndex++}`;
+    const maxIndex = Math.max(leftArr.length, rightArr.length) - 1;
+    let currentIndex = maxIndex;
+
+    for (let i = maxIndex; i >= 0; i--) {
+      const newPathIndex = `${path}/${currentIndex--}`;
+
       // we have elements on both sides
       if (i < leftArr.length && i < rightArr.length) {
         compareObjects(newPathIndex, leftArr[i], rightArr[i]);
         // we only have elements on arr 2
+        
       } else if (i >= leftArr.length && i < rightArr.length) {
         patch.push({ op: 'add', path: newPathIndex, value: rightArr[i] });
         // we only have elements on arr 1
+
       } else if (i < leftArr.length && i >= rightArr.length) {
         patch.push({ op: 'remove', path: newPathIndex });
         // we need to decrement the current index for further operations
-        currentIndex--;
+        // currentIndex--;
       }
     }
   }
@@ -117,37 +121,42 @@ export function generateJSONPatch(
     if (typeof objectHash !== 'function') {
       throw Error('No objectHash function provided');
     }
-
+  
     const leftHashes = leftArr.map((value) =>
       objectHash(value, { side: 'left', path })
     );
     const rightHashes = rightArr.map((value) =>
       objectHash(value, { side: 'right', path })
     );
-    let currentIndex = 0;
 
+    let currentIndex = leftArr.length - 1
+  
     const targetHashes: string[] = [];
-
-    for (let i = 0; i < leftHashes.length; i++) {
-      const newPathIndex = `${path}/${currentIndex++}`;
+  
+    // Change iteration direction: from back to front
+    for (let i = leftArr.length -1; i >= 0; i--) {
+      const newPathIndex = `${path}/${currentIndex--}`;
+      // find index of element from target array in source array
       const rightHashIndex = rightHashes.indexOf(leftHashes[i]);
-
-      // matched by hash (exists on both sides) - compare elements
+  
+      // if element exists in source and target array
       if (rightHashIndex >= 0) {
         compareObjects(newPathIndex, leftArr[i], rightArr[rightHashIndex]);
-        targetHashes.push(leftHashes[i]);
+        targetHashes.unshift(leftHashes[i]);
       } else {
-        // only exists on left, we remove it
+        // only exists on target, we remove it
         patch.push({ op: 'remove', path: newPathIndex });
-        currentIndex--;
+        // currentIndex++;
       }
     }
-
+  
     const toBeAddedHashes = rightHashes.filter(
       (hash) => !targetHashes.includes(hash)
     );
+  
+    currentIndex = leftArr.length
 
-    for (const toBeAddedHash of toBeAddedHashes) {
+    for (const toBeAddedHash of toBeAddedHashes) { // Reverse to iterate from back to front
       patch.push({
         op: 'add',
         path: `${path}/${currentIndex++}`,
@@ -155,24 +164,23 @@ export function generateJSONPatch(
       });
       targetHashes.push(toBeAddedHash);
     }
-
+  
     if (config.array?.ignoreMove) {
       return;
     }
 
-    // we calculate all move operations and add them at the end.
-    // This way, we can always ignore them when we apply the resulting patch
+    // For movement, it's already iterating from back to front
     for (let i = rightHashes.length - 1; i >= 0; i--) {
       const hash = rightHashes[i];
       const targetIndex = rightHashes.indexOf(hash);
       const currentIndex = targetHashes.indexOf(hash);
+      
       if (currentIndex !== targetIndex) {
         patch.push({
           op: 'move',
           from: `${path}/${currentIndex}`,
           path: `${path}/${targetIndex}`,
         });
-        // updates reference array
         moveArrayElement(targetHashes, currentIndex, targetIndex);
       }
     }

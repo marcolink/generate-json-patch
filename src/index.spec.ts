@@ -176,9 +176,13 @@ describe('a generate json patch function', () => {
       { root: [{ id: 4 }, { id: 3 }, { id: 2 }] },
       [
         {
+          op: 'remove',
+          path: '/root/3',
+        },
+        {
           op: 'replace',
-          path: '/root/0/id',
-          value: 4,
+          path: '/root/2/id',
+          value: 2,
         },
         {
           op: 'replace',
@@ -187,12 +191,8 @@ describe('a generate json patch function', () => {
         },
         {
           op: 'replace',
-          path: '/root/2/id',
-          value: 2,
-        },
-        {
-          op: 'remove',
-          path: '/root/3',
+          path: '/root/0/id',
+          value: 4,
         },
       ],
     ],
@@ -236,8 +236,8 @@ describe('a generate json patch function', () => {
           return `${obj.id}`;
         },
       });
-      const patched = doPatch(before, patch);
 
+      const patched = doPatch(before, patch);
       // as long as we do not support move, the result will be different from 'after' in its order
       expect(patched).to.be.eql([
         { id: 2, paramOne: 'current' },
@@ -309,17 +309,17 @@ describe('a generate json patch function', () => {
 
       expect(patch).to.be.eql([
         {
+          op: 'replace',
+          path: '/1/value',
+          value: 'after',
+        },
+        {
           op: 'remove',
           path: '/0',
         },
         {
-          op: 'replace',
-          path: '/0/value',
-          value: 'after',
-        },
-        {
           op: 'add',
-          path: '/1',
+          path: '/2',
           value: {
             id: 1,
             value: 'after',
@@ -328,8 +328,8 @@ describe('a generate json patch function', () => {
         {
           op: 'move',
           from: '/0',
-          path: '/1',
-        },
+          path: '/1'
+        }
       ]);
     });
 
@@ -372,6 +372,8 @@ describe('a generate json patch function', () => {
           return `${obj.id}`;
         },
       });
+
+      console.log({ patch })
 
       const patched = doPatch(before, patch);
 
@@ -638,6 +640,30 @@ describe('a generate json patch function', () => {
         { op: 'replace', path: '/paramTwo/two/ignoreMe', value: 'after' },
       ]);
     });
+
+    it('handles consecutive array removal', () => {
+      const before = [
+        1,
+        2,
+        3
+      ];
+      const after = [
+        1
+      ];
+
+      const patch = generateJSONPatch(before, after);
+
+      const patched = doPatch(before, patch);
+      expect(patched).to.be.eql([
+        1
+      ]);
+
+      expect(patch).to.eql([
+        { op: 'remove', path: '/2' },
+        { op: 'remove', path: '/1' },
+      ]);
+    });
+    
   });
 });
 
