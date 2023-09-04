@@ -154,7 +154,7 @@ export function generateJSONPatch(
       (hash) => !targetHashes.includes(hash)
     );
   
-    currentIndex = leftArr.length
+    currentIndex = targetHashes.length
 
     for (const toBeAddedHash of toBeAddedHashes) { // Reverse to iterate from back to front
       patch.push({

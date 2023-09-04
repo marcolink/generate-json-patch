@@ -305,8 +305,6 @@ describe('a generate json patch function', () => {
         },
       });
 
-      // console.log({before, after, patch})
-
       expect(patch).to.be.eql([
         {
           op: 'replace',
@@ -319,7 +317,7 @@ describe('a generate json patch function', () => {
         },
         {
           op: 'add',
-          path: '/2',
+          path: '/1',
           value: {
             id: 1,
             value: 'after',
@@ -372,8 +370,6 @@ describe('a generate json patch function', () => {
           return `${obj.id}`;
         },
       });
-
-      console.log({ patch })
 
       const patched = doPatch(before, patch);
 
