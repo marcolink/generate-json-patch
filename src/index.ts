@@ -56,10 +56,9 @@ export type GeneratePatchContext = {
   path: string;
 };
 
-export type ObjectHash = (
-  obj: JsonValue,
-  context: GeneratePatchContext
-) => string;
+export type ObjectHashContext = GeneratePatchContext & { index: number };
+
+export type ObjectHash = (obj: JsonValue, context: ObjectHashContext) => string;
 
 export type PropertyFilter = (
   propertyName: string,
@@ -72,60 +71,31 @@ export type JsonPatchConfig = {
   array?: { ignoreMove?: boolean };
 };
 
+export const defaultObjectHash: ObjectHash = (obj, context) => {
+  return context.index.toString();
+};
+
 export function generateJSONPatch(
   before: JsonValue,
   after: JsonValue,
   config: JsonPatchConfig = {}
 ): Patch {
-  const { objectHash, propertyFilter } = config;
+  const { objectHash = defaultObjectHash, propertyFilter } = config;
   const patch: Patch = [];
   const hasPropertyFilter = typeof propertyFilter === 'function';
 
-  // TODO: detect move by reference or identical primitive value, this should be a config flag
-  /*
-    Maybe we can just use a default objectHash for indexed array comparison that creates hashes of the value :thinking:
-     */
-  function compareArrayByIndex(
-    leftArr: JsonArray,
-    rightArr: JsonArray,
-    path: string
-  ) {
-    let currentIndex = 0;
-    const maxLength = Math.max(leftArr.length, rightArr.length);
-    for (let i = 0; i < maxLength; i++) {
-      const newPathIndex = `${path}/${currentIndex++}`;
-      // we have elements on both sides
-      if (i < leftArr.length && i < rightArr.length) {
-        compareObjects(newPathIndex, leftArr[i], rightArr[i]);
-        // we only have elements on arr 2
-      } else if (i >= leftArr.length && i < rightArr.length) {
-        patch.push({ op: 'add', path: newPathIndex, value: rightArr[i] });
-        // we only have elements on arr 1
-      } else if (i < leftArr.length && i >= rightArr.length) {
-        patch.push({ op: 'remove', path: newPathIndex });
-        // we need to decrement the current index for further operations
-        currentIndex--;
-      }
-    }
-  }
+  function compareArrays(leftArr: any[], rightArr: any[], path: string) {
+    // if arrays are equal, no further comparison is required
+    if (JSON.stringify(leftArr) === JSON.stringify(rightArr)) return;
 
-  function compareArrayByHash(
-    leftArr: JsonArray,
-    rightArr: JsonArray,
-    path: string
-  ) {
-    if (typeof objectHash !== 'function') {
-      throw Error('No objectHash function provided');
-    }
-
-    const leftHashes = leftArr.map((value) =>
-      objectHash(value, { side: 'left', path })
+    const leftHashes = leftArr.map((value, index) =>
+      objectHash(value, { side: 'left', path, index })
     );
-    const rightHashes = rightArr.map((value) =>
-      objectHash(value, { side: 'right', path })
+    const rightHashes = rightArr.map((value, index) =>
+      objectHash(value, { side: 'right', path, index })
     );
-    let currentIndex = 0;
 
+    let currentIndex = 0;
     const targetHashes: string[] = [];
 
     for (let i = 0; i < leftHashes.length; i++) {
@@ -175,17 +145,6 @@ export function generateJSONPatch(
         // updates reference array
         moveArrayElement(targetHashes, currentIndex, targetIndex);
       }
-    }
-  }
-
-  function compareArrays(leftArr: any[], rightArr: any[], path: string) {
-    // if arrays are equal, no further comparison is required
-    if (JSON.stringify(leftArr) === JSON.stringify(rightArr)) return;
-
-    if (objectHash) {
-      compareArrayByHash(leftArr, rightArr, path);
-    } else {
-      compareArrayByIndex(leftArr, rightArr, path);
     }
   }
 
