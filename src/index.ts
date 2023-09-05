@@ -56,10 +56,9 @@ export type GeneratePatchContext = {
   path: string;
 };
 
-export type ObjectHash = (
-  obj: JsonValue,
-  context: GeneratePatchContext & { index: number }
-) => string;
+export type ObjectHashContext = GeneratePatchContext & { index: number };
+
+export type ObjectHash = (obj: JsonValue, context: ObjectHashContext) => string;
 
 export type PropertyFilter = (
   propertyName: string,
