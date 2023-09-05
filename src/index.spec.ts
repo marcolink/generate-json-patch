@@ -326,8 +326,8 @@ describe('a generate json patch function', () => {
         {
           op: 'move',
           from: '/0',
-          path: '/1'
-        }
+          path: '/1',
+        },
       ]);
     });
 
@@ -638,28 +638,19 @@ describe('a generate json patch function', () => {
     });
 
     it('handles consecutive array removal', () => {
-      const before = [
-        1,
-        2,
-        3
-      ];
-      const after = [
-        1
-      ];
+      const before = [1, 2, 3];
+      const after = [1];
 
       const patch = generateJSONPatch(before, after);
 
       const patched = doPatch(before, patch);
-      expect(patched).to.be.eql([
-        1
-      ]);
+      expect(patched).to.be.eql([1]);
 
       expect(patch).to.eql([
         { op: 'remove', path: '/2' },
         { op: 'remove', path: '/1' },
       ]);
     });
-    
   });
 });
 

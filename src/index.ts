@@ -100,11 +100,9 @@ export function generateJSONPatch(
       if (i < leftArr.length && i < rightArr.length) {
         compareObjects(newPathIndex, leftArr[i], rightArr[i]);
         // we only have elements on arr 2
-        
       } else if (i >= leftArr.length && i < rightArr.length) {
         patch.push({ op: 'add', path: newPathIndex, value: rightArr[i] });
         // we only have elements on arr 1
-
       } else if (i < leftArr.length && i >= rightArr.length) {
         patch.push({ op: 'remove', path: newPathIndex });
         // we need to decrement the current index for further operations
@@ -121,7 +119,7 @@ export function generateJSONPatch(
     if (typeof objectHash !== 'function') {
       throw Error('No objectHash function provided');
     }
-  
+
     const leftHashes = leftArr.map((value) =>
       objectHash(value, { side: 'left', path })
     );
@@ -129,16 +127,16 @@ export function generateJSONPatch(
       objectHash(value, { side: 'right', path })
     );
 
-    let currentIndex = leftArr.length - 1
-  
+    let currentIndex = leftArr.length - 1;
+
     const targetHashes: string[] = [];
-  
+
     // Change iteration direction: from back to front
-    for (let i = leftArr.length -1; i >= 0; i--) {
+    for (let i = leftArr.length - 1; i >= 0; i--) {
       const newPathIndex = `${path}/${currentIndex--}`;
       // find index of element from target array in source array
       const rightHashIndex = rightHashes.indexOf(leftHashes[i]);
-  
+
       // if element exists in source and target array
       if (rightHashIndex >= 0) {
         compareObjects(newPathIndex, leftArr[i], rightArr[rightHashIndex]);
@@ -149,14 +147,15 @@ export function generateJSONPatch(
         // currentIndex++;
       }
     }
-  
+
     const toBeAddedHashes = rightHashes.filter(
       (hash) => !targetHashes.includes(hash)
     );
-  
-    currentIndex = targetHashes.length
 
-    for (const toBeAddedHash of toBeAddedHashes) { // Reverse to iterate from back to front
+    currentIndex = targetHashes.length;
+
+    for (const toBeAddedHash of toBeAddedHashes) {
+      // Reverse to iterate from back to front
       patch.push({
         op: 'add',
         path: `${path}/${currentIndex++}`,
@@ -164,7 +163,7 @@ export function generateJSONPatch(
       });
       targetHashes.push(toBeAddedHash);
     }
-  
+
     if (config.array?.ignoreMove) {
       return;
     }
@@ -174,7 +173,7 @@ export function generateJSONPatch(
       const hash = rightHashes[i];
       const targetIndex = rightHashes.indexOf(hash);
       const currentIndex = targetHashes.indexOf(hash);
-      
+
       if (currentIndex !== targetIndex) {
         patch.push({
           op: 'move',
