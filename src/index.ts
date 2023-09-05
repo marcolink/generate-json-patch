@@ -95,21 +95,22 @@ export function generateJSONPatch(
       objectHash(value, { side: 'right', path, index })
     );
 
-    let currentIndex = 0;
+    let currentIndex = leftArr.length - 1;
     const targetHashes: string[] = [];
 
-    for (let i = 0; i < leftHashes.length; i++) {
-      const newPathIndex = `${path}/${currentIndex++}`;
+    // Change iteration direction: from back to front
+    for (let i = leftArr.length - 1; i >= 0; i--) {
+      const newPathIndex = `${path}/${currentIndex--}`;
+      // find index of element from target array in source array
       const rightHashIndex = rightHashes.indexOf(leftHashes[i]);
 
-      // matched by hash (exists on both sides) - compare elements
+      // if element exists in source and target array
       if (rightHashIndex >= 0) {
         compareObjects(newPathIndex, leftArr[i], rightArr[rightHashIndex]);
-        targetHashes.push(leftHashes[i]);
+        targetHashes.unshift(leftHashes[i]);
       } else {
-        // only exists on left, we remove it
+        // only exists on target, we remove it
         patch.push({ op: 'remove', path: newPathIndex });
-        currentIndex--;
       }
     }
 
@@ -117,7 +118,10 @@ export function generateJSONPatch(
       (hash) => !targetHashes.includes(hash)
     );
 
+    currentIndex = targetHashes.length;
+
     for (const toBeAddedHash of toBeAddedHashes) {
+      // Reverse to iterate from back to front
       patch.push({
         op: 'add',
         path: `${path}/${currentIndex++}`,
@@ -130,19 +134,18 @@ export function generateJSONPatch(
       return;
     }
 
-    // we calculate all move operations and add them at the end.
-    // This way, we can always ignore them when we apply the resulting patch
+    // For movement, it's already iterating from back to front
     for (let i = rightHashes.length - 1; i >= 0; i--) {
       const hash = rightHashes[i];
       const targetIndex = rightHashes.indexOf(hash);
       const currentIndex = targetHashes.indexOf(hash);
+
       if (currentIndex !== targetIndex) {
         patch.push({
           op: 'move',
           from: `${path}/${currentIndex}`,
           path: `${path}/${targetIndex}`,
         });
-        // updates reference array
         moveArrayElement(targetHashes, currentIndex, targetIndex);
       }
     }
