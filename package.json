@@ -34,7 +34,9 @@
     "test-watch": "npm run test -- -w --watch-files '**/*.ts'",
     "test-coverage": "nyc npm run test",
     "lint": "eslint --ext .ts ./src",
-    "lint-fix": "npm run lint -- --fix"
+    "lint-fix": "npm run lint -- --fix",
+    "presemantic-release": "yarn run build",
+    "semantic-release": "semantic-release"
   },
   "prettier": {
     "printWidth": 80,
@@ -54,6 +56,7 @@
     "dts": true
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
     "@types/chai": "^4.3.5",
     "@types/mocha": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^6.2.0",
@@ -65,8 +68,32 @@
     "fast-json-patch": "^3.1.1",
     "mocha-ts": "^0.0.0",
     "nyc": "^15.1.0",
+    "semantic-release": "^21.1.1",
     "ts-mocha": "^10.0.0",
     "tsup": "^7.1.0",
     "typescript": "^5.1.6"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "releaseRules": [
+            {
+              "type": "build",
+              "scope": "deps",
+              "release": "patch"
+            }
+          ]
+        }
+      ],
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/npm",
+      "@semantic-release/changelog",
+      "@semantic-release/github"
+    ]
   }
 }
