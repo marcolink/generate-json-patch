@@ -12,8 +12,7 @@ Create [RFC 6902](https://datatracker.ietf.org/doc/html/rfc6902/) compliant JSON
 - Can diff any two [JSON](https://www.ecma-international.org/publications-and-standards/standards/ecma-404/)  compliant objects - returns differences as [JSON Patch](http://jsonpatch.com/).
 - Elegant array diffing by providing an `objectHash` to match array elements
 - Ignore specific keys by providing a `propertyFilter`
-- `move` operations are ALWAYS **appended at the end**, therefore, they can be ignored (if wanted) when the patch gets applied.
-- :paw_prints: ***Is it small?*** Zero dependencies - it's ~**7 KB** (uncompressed).
+- :paw_prints: ***Is it small?*** Zero dependencies - it's ~**3 KB** (minified).
 - :crystal_ball: ***Is it fast?*** I haven't done any performance comparison yet.
 - :hatched_chick: ***Is it stable?*** Test coverage is high, but it's still in its early days - bugs are expected.
 - The interface is inspired by [jsondiffpatch](https://github.com/benjamine/jsondiffpatch)
@@ -41,7 +40,7 @@ console.log(patch) // => [{op: 'replace', path: '/year', value: 1974}]
 ## Configuration
 
 ```typescript
-import { generateJSONPatch, JsonPatchConfig, JsonValue } from 'generate-json-patch';
+import { generateJSONPatch, JsonPatchConfig, JsonValue, ObjectHashContext } from 'generate-json-patch';
 
 generateJSONPatch({/*...*/}, {/*...*/}, {
     // called when comparing array elements
@@ -53,7 +52,7 @@ generateJSONPatch({/*...*/}, {/*...*/}, {
     },
     // called for every property on objects. Can be used to ignore sensitive or irrelevant 
     // properties when comparing data.
-    propertyFilter: function (propertyName: string, context: GeneratePatchContext) {
+    propertyFilter: function (propertyName: string, context: ObjectHashContext) {
         return !['sensitiveProperty'].includes(propertyName);
     },
     array: {
@@ -66,12 +65,12 @@ generateJSONPatch({/*...*/}, {/*...*/}, {
 ``` 
 
 ### Patch Context
-Both config function (`objectHash`, `propertyFilter`), receive a patch context as second parameter.
+Both config function (`objectHash`, `propertyFilter`), receive a context as second parameter.
 This allows for granular decision-making on the provided data.
 
 #### Example
 ```typescript
-import {generateJSONPatch, JsonPatchConfig, JsonValue, pathInfo} from 'generate-json-patch';
+import {generateJSONPatch, JsonPatchConfig, JsonValue, ObjectHashContext, pathInfo} from 'generate-json-patch';
 
 const before = {
     manufacturer: "Ford",
@@ -98,7 +97,7 @@ const after = {
 }
 
 const patch = generateJSONPatch(before, after, {
-    objectHash: function (value: JsonValue, context: GeneratePatchContext) {
+    objectHash: function (value: JsonValue, context: ObjectHashContext) {
         const {length, last} = pathInfo(context.path)
         if (length === 2 && last === 'engine') {
             return value.name
@@ -109,9 +108,8 @@ const patch = generateJSONPatch(before, after, {
 
 console.log(patch) // => [
 // { op: 'replace', path: '/engine/3/hp', value: 138 },
-// { op: 'move', from: '/engine/2',  path: '/engine/3' },
-// { op: 'move', from: '/engine/1',  path: '/engine/2' },
-// { op: 'move', from: '/engine/0',  path: '/engine/1' }]
+// { op: 'move', from: '/engine/3', path: '/engine/0' }
+// ]
 ```
 
 > For more examples, check out the [tests](./src/index.spec.ts)
