@@ -1,5 +1,5 @@
-import type { JsonValue, Patch } from './index';
-import { generateJSONPatch, GeneratePatchContext, pathInfo } from './index';
+import type { JsonValue, ObjectHashContext, Patch } from './index';
+import { generateJSONPatch, pathInfo } from './index';
 import { applyPatch, deepClone } from 'fast-json-patch';
 import { assert, expect } from 'chai';
 
@@ -238,7 +238,6 @@ describe('a generate json patch function', () => {
       });
 
       const patched = doPatch(before, patch);
-      // as long as we do not support move, the result will be different from 'after' in its order
       expect(patched).to.be.eql([
         { id: 2, paramOne: 'current' },
         { id: 1, paramOne: 'current' },
@@ -324,9 +323,9 @@ describe('a generate json patch function', () => {
           },
         },
         {
+          from: '/1',
           op: 'move',
-          from: '/0',
-          path: '/1',
+          path: '/0',
         },
       ]);
     });
@@ -535,24 +534,26 @@ describe('a generate json patch function', () => {
       };
 
       const patch = generateJSONPatch(before, after, {
-        objectHash: function (value: JsonValue, context: GeneratePatchContext) {
+        objectHash: function (value: JsonValue, context: ObjectHashContext) {
           const { length, last } = pathInfo(context.path);
           if (length === 2 && last === 'engine') {
             // @ts-ignore
             return value?.name;
           }
-          return JSON.stringify(value);
+          return context.index.toString();
         },
       });
 
+      const patched = doPatch(before, patch);
+      expect(patched).to.be.eql(after);
+
       expect(patch).to.be.eql([
         { op: 'replace', path: '/engine/3/hp', value: 138 },
-        { op: 'move', from: '/engine/2', path: '/engine/3' },
-        { op: 'move', from: '/engine/1', path: '/engine/2' },
-        { op: 'move', from: '/engine/0', path: '/engine/1' },
+        { op: 'move', from: '/engine/3', path: '/engine/0' },
       ]);
     });
   });
+
   describe('with property filter', () => {
     it('ignores property on root filter', () => {
       const before = {
@@ -655,7 +656,7 @@ describe('a generate json patch function', () => {
 });
 
 function doPatch(json: JsonValue, patch: Patch) {
-  return applyPatch(deepClone(json), patch, true, true).newDocument;
+  return applyPatch(deepClone(json), patch, true, false).newDocument;
 }
 
 function expectPatchedEqualsAfter(before: JsonValue, after: JsonValue) {

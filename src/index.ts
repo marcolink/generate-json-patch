@@ -1,6 +1,6 @@
-export type JsonObject =
-  | { [Key in string]: JsonValue }
-  | { [Key in string]?: JsonValue };
+import { moveOperations } from './move-operations';
+
+export type JsonObject = { [Key in string]: JsonValue | undefined };
 
 export type JsonArray = JsonValue[] | readonly JsonValue[];
 
@@ -134,21 +134,8 @@ export function generateJSONPatch(
       return;
     }
 
-    // For movement, it's already iterating from back to front
-    for (let i = rightHashes.length - 1; i >= 0; i--) {
-      const hash = rightHashes[i];
-      const targetIndex = rightHashes.indexOf(hash);
-      const currentIndex = targetHashes.indexOf(hash);
-
-      if (currentIndex !== targetIndex) {
-        patch.push({
-          op: 'move',
-          from: `${path}/${currentIndex}`,
-          path: `${path}/${targetIndex}`,
-        });
-        moveArrayElement(targetHashes, currentIndex, targetIndex);
-      }
-    }
+    const moveOps = moveOperations(targetHashes, rightHashes, path);
+    patch.push(...moveOps);
   }
 
   function compareObjects(
@@ -238,10 +225,6 @@ function isPrimitiveValue(value: JsonValue): value is JsonValue {
 
 function isJsonObject(value: JsonValue): value is JsonObject {
   return value?.constructor === Object;
-}
-
-function moveArrayElement(array: any[], from: number, to: number): void {
-  array.splice(to, 0, array.splice(from, 1)[0]);
 }
 
 export type PathInfoResult = {

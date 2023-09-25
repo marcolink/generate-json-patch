@@ -30,7 +30,7 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts",
-    "test": "ts-mocha -p tsconfig.json src/index.spec.ts",
+    "test": "ts-mocha -p tsconfig.json src/*.spec.ts",
     "test-watch": "npm run test -- -w --watch-files '**/*.ts'",
     "test-coverage": "nyc npm run test",
     "lint": "eslint --ext .ts ./src",
