@@ -1,3 +1,10 @@
+## [1.1.1](https://github.com/marcolink/generate-json-patch/compare/v1.1.0...v1.1.1) (2024-05-22)
+
+
+### Bug Fixes
+
+* loose json value type ([ead7084](https://github.com/marcolink/generate-json-patch/commit/ead7084670d2c1191000f4c9dd181c7fe5351bef))
+
 # [1.1.0](https://github.com/marcolink/generate-json-patch/compare/v1.0.1...v1.1.0) (2023-09-25)
 
 
