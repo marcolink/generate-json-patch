@@ -186,8 +186,8 @@ export function generateJSONPatch(
         compareArrays(leftValue, rightValue, newPath);
       } else if (isJsonObject(rightValue)) {
         if (isJsonObject(leftValue)) {
-          if (maxDepth <= path.split('/').length) {
-            patch.push({ op: 'replace', path: path, value: rightJsonValue });
+          if (maxDepth <= newPath.split('/').length) {
+            patch.push({ op: 'replace', path: newPath, value: rightValue });
           } else {
             compareObjects(newPath, leftValue, rightValue);
           }
