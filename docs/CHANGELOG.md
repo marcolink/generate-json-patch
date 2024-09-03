@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/marcolink/generate-json-patch/compare/v1.2.1...v1.2.2) (2024-09-03)
+
+
+### Bug Fixes
+
+* respect maxDepth for array values ([623fc53](https://github.com/marcolink/generate-json-patch/commit/623fc53dfb9392381451febd20897bb25363130a))
+
 ## [1.2.1](https://github.com/marcolink/generate-json-patch/compare/v1.2.0...v1.2.1) (2024-09-03)
 
 
