@@ -662,6 +662,7 @@ describe('a generate json patch function', () => {
             fourthLevel: 'hello-world',
           },
           thirdLevelTwo: 'hello',
+          thirdLevelThree: ['hello', 'world'],
         },
       },
     };
@@ -673,6 +674,7 @@ describe('a generate json patch function', () => {
             fourthLevel: 'hello-brave-new-world',
           },
           thirdLevelTwo: 'hello',
+          thirdLevelThree: ['hello', 'world'],
         },
       },
     };
@@ -688,13 +690,16 @@ describe('a generate json patch function', () => {
               fourthLevel: 'hello-brave-new-world',
             },
             thirdLevelTwo: 'hello',
+            thirdLevelThree: ['hello', 'world'],
           },
         },
       ]);
     });
 
     it('detects changes as a given depth of 4', () => {
-      const patch = generateJSONPatch(before, after, { maxDepth: 4 });
+      const afterModified = structuredClone(after);
+      afterModified.firstLevel.secondLevel.thirdLevelTwo = 'hello-world';
+      const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
       expect(patch).to.eql([
         {
           op: 'replace',
@@ -702,6 +707,51 @@ describe('a generate json patch function', () => {
           value: {
             fourthLevel: 'hello-brave-new-world',
           },
+        },
+        {
+          op: 'replace',
+          path: '/firstLevel/secondLevel/thirdLevelTwo',
+          value: 'hello-world',
+        },
+      ]);
+    });
+
+    it('detects changes as a given depth of 4 for an array value', () => {
+      const afterModified = structuredClone(before);
+      afterModified.firstLevel.secondLevel.thirdLevelThree = ['test'];
+      const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
+      expect(patch).to.eql([
+        {
+          op: 'replace',
+          path: '/firstLevel/secondLevel/thirdLevelThree',
+          value: ['test'],
+        },
+      ]);
+    });
+
+    it('detects changes as a given depth of 4 for an removed array value', () => {
+      const afterModified = structuredClone(before);
+      // @ts-ignore
+      delete afterModified.firstLevel.secondLevel.thirdLevelThree;
+      const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
+      expect(patch).to.eql([
+        {
+          op: 'remove',
+          path: '/firstLevel/secondLevel/thirdLevelThree',
+        },
+      ]);
+    });
+
+    it('detects changes as a given depth of 4 for an nullyfied array value', () => {
+      const afterModified = structuredClone(before);
+      // @ts-ignore
+      afterModified.firstLevel.secondLevel.thirdLevelThree = null;
+      const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
+      expect(patch).to.eql([
+        {
+          op: 'replace',
+          path: '/firstLevel/secondLevel/thirdLevelThree',
+          value: null,
         },
       ]);
     });

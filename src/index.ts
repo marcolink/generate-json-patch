@@ -91,6 +91,10 @@ export function generateJSONPatch(
   const patch: Patch = [];
   const hasPropertyFilter = typeof propertyFilter === 'function';
 
+  function maxDepthReached(path: string) {
+    return maxDepth <= path.split('/').length;
+  }
+
   function compareArrays(leftArr: any[], rightArr: any[], path: string) {
     // if arrays are equal, no further comparison is required
     if (JSON.stringify(leftArr) === JSON.stringify(rightArr)) return;
@@ -104,6 +108,11 @@ export function generateJSONPatch(
 
     let currentIndex = leftArr.length - 1;
     const targetHashes: string[] = [];
+
+    if (maxDepthReached(path)) {
+      patch.push({ op: 'replace', path: path, value: rightArr });
+      return;
+    }
 
     // Change iteration direction: from back to front
     for (let i = leftArr.length - 1; i >= 0; i--) {
@@ -154,7 +163,7 @@ export function generateJSONPatch(
       path === '' && [leftJsonValue, rightJsonValue].every(Array.isArray);
 
     if (isPrimitiveValue(leftJsonValue) || isPrimitiveValue(rightJsonValue)) {
-      if (leftJsonValue !== rightJsonValue) {
+      if (JSON.stringify(leftJsonValue) !== JSON.stringify(rightJsonValue)) {
         patch.push({ op: 'replace', path: path, value: rightJsonValue });
       }
       return;
@@ -186,8 +195,10 @@ export function generateJSONPatch(
         compareArrays(leftValue, rightValue, newPath);
       } else if (isJsonObject(rightValue)) {
         if (isJsonObject(leftValue)) {
-          if (maxDepth <= newPath.split('/').length) {
-            patch.push({ op: 'replace', path: newPath, value: rightValue });
+          if (maxDepthReached(newPath)) {
+            if (JSON.stringify(leftValue) !== JSON.stringify(rightValue)) {
+              patch.push({ op: 'replace', path: newPath, value: rightValue });
+            }
           } else {
             compareObjects(newPath, leftValue, rightValue);
           }
