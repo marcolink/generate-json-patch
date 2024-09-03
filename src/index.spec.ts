@@ -677,19 +677,34 @@ describe('a generate json patch function', () => {
       },
     };
 
-    const patch = generateJSONPatch(before, after, { maxDepth: 3 });
-    expect(patch).to.eql([
-      {
-        op: 'replace',
-        path: '/firstLevel/secondLevel',
-        value: {
-          thirdLevel: {
+    it('detects changes as a given depth of 3', () => {
+      const patch = generateJSONPatch(before, after, { maxDepth: 3 });
+      expect(patch).to.eql([
+        {
+          op: 'replace',
+          path: '/firstLevel/secondLevel',
+          value: {
+            thirdLevel: {
+              fourthLevel: 'hello-brave-new-world',
+            },
+            thirdLevelTwo: 'hello',
+          },
+        },
+      ]);
+    });
+
+    it('detects changes as a given depth of 4', () => {
+      const patch = generateJSONPatch(before, after, { maxDepth: 4 });
+      expect(patch).to.eql([
+        {
+          op: 'replace',
+          path: '/firstLevel/secondLevel/thirdLevel',
+          value: {
             fourthLevel: 'hello-brave-new-world',
           },
-          thirdLevelTwo: 'hello',
         },
-      },
-    ]);
+      ]);
+    });
   });
 });
 
