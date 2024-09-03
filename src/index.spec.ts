@@ -653,6 +653,44 @@ describe('a generate json patch function', () => {
       ]);
     });
   });
+
+  describe('with maxDepth config', () => {
+    const before = {
+      firstLevel: {
+        secondLevel: {
+          thirdLevel: {
+            fourthLevel: 'hello-world',
+          },
+          thirdLevelTwo: 'hello',
+        },
+      },
+    };
+
+    const after = {
+      firstLevel: {
+        secondLevel: {
+          thirdLevel: {
+            fourthLevel: 'hello-brave-new-world',
+          },
+          thirdLevelTwo: 'hello',
+        },
+      },
+    };
+
+    const patch = generateJSONPatch(before, after, { maxDepth: 3 });
+    expect(patch).to.eql([
+      {
+        op: 'replace',
+        path: '/firstLevel/secondLevel',
+        value: {
+          thirdLevel: {
+            fourthLevel: 'hello-brave-new-world',
+          },
+          thirdLevelTwo: 'hello',
+        },
+      },
+    ]);
+  });
 });
 
 function doPatch(json: JsonValue, patch: Patch) {
