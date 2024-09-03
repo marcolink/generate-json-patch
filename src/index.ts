@@ -71,6 +71,7 @@ export type JsonPatchConfig = {
   objectHash?: ObjectHash;
   propertyFilter?: PropertyFilter;
   array?: { ignoreMove?: boolean };
+  maxDepth?: number
 };
 
 export const defaultObjectHash: ObjectHash = (obj, context) => {
@@ -82,7 +83,7 @@ export function generateJSONPatch(
   after: JsonValue,
   config: JsonPatchConfig = {}
 ): Patch {
-  const { objectHash = defaultObjectHash, propertyFilter } = config;
+  const { objectHash = defaultObjectHash, propertyFilter, maxDepth = Infinity } = config;
   const patch: Patch = [];
   const hasPropertyFilter = typeof propertyFilter === 'function';
 
@@ -181,7 +182,11 @@ export function generateJSONPatch(
         compareArrays(leftValue, rightValue, newPath);
       } else if (isJsonObject(rightValue)) {
         if (isJsonObject(leftValue)) {
-          compareObjects(newPath, leftValue, rightValue);
+          if(maxDepth <= path.split('/').length) {
+            patch.push({ op: 'replace', path: path, value: rightJsonValue });
+          } else {
+            compareObjects(newPath, leftValue, rightValue);
+          }
         } else if (leftJsonValue.hasOwnProperty(rightKey)) {
           patch.push({ op: 'replace', path: newPath, value: rightValue });
         } else {
