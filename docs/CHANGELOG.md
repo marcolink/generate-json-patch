@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/marcolink/generate-json-patch/compare/v1.1.1...v1.2.0) (2024-09-03)
+
+
+### Bug Fixes
+
+* linting ([6c689b5](https://github.com/marcolink/generate-json-patch/commit/6c689b579713c5f99ed858fe4f71ca8dca987693))
+
+
+### Features
+
+* add max depth config ([6ea96bc](https://github.com/marcolink/generate-json-patch/commit/6ea96bcc33e42242bacc127f87ef85051bece0b0))
+
 ## [1.1.1](https://github.com/marcolink/generate-json-patch/compare/v1.1.0...v1.1.1) (2024-05-22)
 
 
