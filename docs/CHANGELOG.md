@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/marcolink/generate-json-patch/compare/v1.2.3...v1.2.4) (2024-09-04)
+
+
+### Bug Fixes
+
+* ignore key order when comparing objects at max depth ([0c59d87](https://github.com/marcolink/generate-json-patch/commit/0c59d87e358c48d804ec4a5a7e059481bbe64c13))
+
 ## [1.2.3](https://github.com/marcolink/generate-json-patch/compare/v1.2.2...v1.2.3) (2024-09-04)
 
 
