@@ -1,7 +1,7 @@
-import type {JsonValue, ObjectHashContext, Patch} from './index';
-import {generateJSONPatch, pathInfo} from './index';
-import {applyPatch, deepClone} from 'fast-json-patch';
-import {assert, expect} from 'chai';
+import type { JsonValue, ObjectHashContext, Patch } from './index';
+import { generateJSONPatch, pathInfo } from './index';
+import { applyPatch, deepClone } from 'fast-json-patch';
+import { assert, expect } from 'chai';
 
 type Title = string;
 type Before = JsonValue;
@@ -18,9 +18,9 @@ const jsonValues = {
   primitiveNumberZero: 0,
   primitiveBooleanTrue: true,
   primitiveBooleanFalse: false,
-  jsonObjectWithFlatPropertiesAndStringValues: {a: 'a', b: 'b', c: 'c'},
-  jsonObjectWithFlatPropertiesAndNumberValues: {a: 3, b: 2, c: 1},
-  jsonObjectWithFlatPropertiesAndMixedValues: {a: true, b: 'b', c: 12},
+  jsonObjectWithFlatPropertiesAndStringValues: { a: 'a', b: 'b', c: 'c' },
+  jsonObjectWithFlatPropertiesAndNumberValues: { a: 3, b: 2, c: 1 },
+  jsonObjectWithFlatPropertiesAndMixedValues: { a: true, b: 'b', c: 12 },
 } as const;
 
 describe('a generate json patch function', () => {
@@ -47,12 +47,12 @@ describe('a generate json patch function', () => {
       'adds root array elements',
       [1, 2, 3],
       [1, 2, 3, 4],
-      [{op: 'add', path: '/3', value: 4}],
+      [{ op: 'add', path: '/3', value: 4 }],
     ],
     [
       'adds root object property',
-      {a: 'a', b: 'b'},
-      {a: 'a', b: 'b', c: 'c'},
+      { a: 'a', b: 'b' },
+      { a: 'a', b: 'b', c: 'c' },
       [
         {
           op: 'add',
@@ -65,38 +65,38 @@ describe('a generate json patch function', () => {
       'removes root array elements',
       [1, 2, 3, 4],
       [1, 2, 3],
-      [{op: 'remove', path: '/3'}],
+      [{ op: 'remove', path: '/3' }],
     ],
     [
       'removes root object property',
-      {a: 'a', b: 'b', c: 'c'},
-      {a: 'a', b: 'b'},
-      [{op: 'remove', path: '/c'}],
+      { a: 'a', b: 'b', c: 'c' },
+      { a: 'a', b: 'b' },
+      [{ op: 'remove', path: '/c' }],
     ],
     [
       'replaces root number values',
       1,
       2,
-      [{op: 'replace', path: '', value: 2}],
+      [{ op: 'replace', path: '', value: 2 }],
     ],
     [
       'replaces root string values',
       'hello',
       'world',
-      [{op: 'replace', path: '', value: 'world'}],
+      [{ op: 'replace', path: '', value: 'world' }],
     ],
     [
       'replaces root boolean values',
       true,
       false,
-      [{op: 'replace', path: '', value: false}],
+      [{ op: 'replace', path: '', value: false }],
     ],
 
     ['replaces root empty arrays', [], [], []],
     [
       'replaces root object property',
-      {a: 'a', b: 'b'},
-      {a: 'a', b: 'c'},
+      { a: 'a', b: 'b' },
+      { a: 'a', b: 'c' },
       [
         {
           op: 'replace',
@@ -109,12 +109,12 @@ describe('a generate json patch function', () => {
       'replaces root array elements',
       [1, 2, 3],
       [1, 2, 4],
-      [{op: 'replace', path: '/2', value: 4}],
+      [{ op: 'replace', path: '/2', value: 4 }],
     ],
     [
       'replaces an obj prop with an array property',
-      {prop: {hello: 'world'}},
-      {prop: ['hello', 'world']},
+      { prop: { hello: 'world' } },
+      { prop: ['hello', 'world'] },
       [
         {
           op: 'replace',
@@ -125,20 +125,20 @@ describe('a generate json patch function', () => {
     ],
     [
       'replaces an array prop with an obj property',
-      {prop: ['hello', 'world']},
-      {prop: {hello: 'world'}},
+      { prop: ['hello', 'world'] },
+      { prop: { hello: 'world' } },
       [
         {
           op: 'replace',
           path: '/prop',
-          value: {hello: 'world'},
+          value: { hello: 'world' },
         },
       ],
     ],
     [
       'replaces a deep nested object property',
-      {root: {first: {second: {third: 'before'}}}},
-      {root: {first: {second: {third: 'after'}}}},
+      { root: { first: { second: { third: 'before' } } } },
+      { root: { first: { second: { third: 'after' } } } },
       [
         {
           op: 'replace',
@@ -153,13 +153,13 @@ describe('a generate json patch function', () => {
         root: {
           first: [
             {},
-            {second: {third: 'before', list: ['hello', 'world']}},
+            { second: { third: 'before', list: ['hello', 'world'] } },
           ],
         },
       },
       {
         root: {
-          first: [{}, {second: {third: 'after', list: ['hello', 'world']}}],
+          first: [{}, { second: { third: 'after', list: ['hello', 'world'] } }],
         },
       },
       [
@@ -172,8 +172,8 @@ describe('a generate json patch function', () => {
     ],
     [
       'detects several changes on arrays by reference',
-      {root: [{id: 1}, {id: 2}, {id: 3}, {id: 4}]},
-      {root: [{id: 4}, {id: 3}, {id: 2}]},
+      { root: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }] },
+      { root: [{ id: 4 }, { id: 3 }, { id: 2 }] },
       [
         {
           op: 'remove',
@@ -210,8 +210,8 @@ describe('a generate json patch function', () => {
 
   describe('with an array value hash function', () => {
     it('throws when objectHash is not a function', () => {
-      const before = [{id: 1, paramOne: 'before'}];
-      const after = [{id: 2, paramOne: 'after'}];
+      const before = [{ id: 1, paramOne: 'before' }];
+      const after = [{ id: 2, paramOne: 'after' }];
 
       assert.throws(() =>
         generateJSONPatch(before, after, {
@@ -223,12 +223,12 @@ describe('a generate json patch function', () => {
 
     it('handles changes with change and move on the same property', () => {
       const before = [
-        {id: 1, paramOne: 'future', paramTwo: 'past'},
-        {id: 2, paramOne: 'current'},
+        { id: 1, paramOne: 'future', paramTwo: 'past' },
+        { id: 2, paramOne: 'current' },
       ];
       const after = [
-        {id: 2, paramOne: 'current'},
-        {id: 1, paramOne: 'current'},
+        { id: 2, paramOne: 'current' },
+        { id: 1, paramOne: 'current' },
       ];
 
       const patch = generateJSONPatch(before, after, {
@@ -239,19 +239,19 @@ describe('a generate json patch function', () => {
 
       const patched = doPatch(before, patch);
       expect(patched).to.be.eql([
-        {id: 2, paramOne: 'current'},
-        {id: 1, paramOne: 'current'},
+        { id: 2, paramOne: 'current' },
+        { id: 1, paramOne: 'current' },
       ]);
     });
 
     it('handles changes on array objects with different shape', () => {
-      const before = [{id: 1, paramOne: 'current'}];
+      const before = [{ id: 1, paramOne: 'current' }];
       const after = [
         {
           id: 1,
           paramOne: 'future',
           paramTwo: 'past',
-          paramThree: {nested: 'some text'},
+          paramThree: { nested: 'some text' },
         },
       ];
 
@@ -268,7 +268,7 @@ describe('a generate json patch function', () => {
           id: 1,
           paramOne: 'future',
           paramTwo: 'past',
-          paramThree: {nested: 'some text'},
+          paramThree: { nested: 'some text' },
         },
       ]);
     });
@@ -487,7 +487,7 @@ describe('a generate json patch function', () => {
         objectHash: function (obj: any) {
           return `${obj.id}`;
         },
-        array: {ignoreMove: true},
+        array: { ignoreMove: true },
       });
 
       const patched = doPatch(before, patch);
@@ -514,10 +514,10 @@ describe('a generate json patch function', () => {
         type: 'Granada',
         colors: ['red', 'silver', 'yellow'],
         engine: [
-          {name: 'Cologne V6 2.6', hp: 125},
-          {name: 'Cologne V6 2.0', hp: 90},
-          {name: 'Cologne V6 2.3', hp: 108},
-          {name: 'Essex V6 3.0', hp: 150},
+          { name: 'Cologne V6 2.6', hp: 125 },
+          { name: 'Cologne V6 2.0', hp: 90 },
+          { name: 'Cologne V6 2.3', hp: 108 },
+          { name: 'Essex V6 3.0', hp: 150 },
         ],
       };
 
@@ -526,16 +526,16 @@ describe('a generate json patch function', () => {
         type: 'Granada',
         colors: ['red', 'silver', 'yellow'],
         engine: [
-          {name: 'Essex V6 3.0', hp: 138},
-          {name: 'Cologne V6 2.6', hp: 125},
-          {name: 'Cologne V6 2.0', hp: 90},
-          {name: 'Cologne V6 2.3', hp: 108},
+          { name: 'Essex V6 3.0', hp: 138 },
+          { name: 'Cologne V6 2.6', hp: 125 },
+          { name: 'Cologne V6 2.0', hp: 90 },
+          { name: 'Cologne V6 2.3', hp: 108 },
         ],
       };
 
       const patch = generateJSONPatch(before, after, {
         objectHash: function (value: JsonValue, context: ObjectHashContext) {
-          const {length, last} = pathInfo(context.path);
+          const { length, last } = pathInfo(context.path);
           if (length === 2 && last === 'engine') {
             // @ts-ignore
             return value?.name;
@@ -548,8 +548,8 @@ describe('a generate json patch function', () => {
       expect(patched).to.be.eql(after);
 
       expect(patch).to.be.eql([
-        {op: 'replace', path: '/engine/3/hp', value: 138},
-        {op: 'move', from: '/engine/3', path: '/engine/0'},
+        { op: 'replace', path: '/engine/3/hp', value: 138 },
+        { op: 'move', from: '/engine/3', path: '/engine/0' },
       ]);
     });
   });
@@ -584,7 +584,7 @@ describe('a generate json patch function', () => {
       expect(patched).to.be.eql({
         id: 1,
         paramOne: 'after',
-        paramTwo: {ignoreMe: 'before', doNotIgnoreMe: 'after'},
+        paramTwo: { ignoreMe: 'before', doNotIgnoreMe: 'after' },
       });
     });
 
@@ -627,14 +627,14 @@ describe('a generate json patch function', () => {
         paramTwo: {
           ignoreMe: 'before',
           doNotIgnoreMe: 'after',
-          two: {ignoreMe: 'after'},
+          two: { ignoreMe: 'after' },
         },
       });
 
       expect(patch).to.eql([
-        {op: 'replace', path: '/paramOne', value: 'after'},
-        {op: 'replace', path: '/paramTwo/doNotIgnoreMe', value: 'after'},
-        {op: 'replace', path: '/paramTwo/two/ignoreMe', value: 'after'},
+        { op: 'replace', path: '/paramOne', value: 'after' },
+        { op: 'replace', path: '/paramTwo/doNotIgnoreMe', value: 'after' },
+        { op: 'replace', path: '/paramTwo/two/ignoreMe', value: 'after' },
       ]);
     });
 
@@ -648,8 +648,8 @@ describe('a generate json patch function', () => {
       expect(patched).to.be.eql([1]);
 
       expect(patch).to.eql([
-        {op: 'remove', path: '/2'},
-        {op: 'remove', path: '/1'},
+        { op: 'remove', path: '/2' },
+        { op: 'remove', path: '/1' },
       ]);
     });
   });
@@ -680,7 +680,7 @@ describe('a generate json patch function', () => {
     };
 
     it('detects changes as a given depth of 3', () => {
-      const patch = generateJSONPatch(before, after, {maxDepth: 3});
+      const patch = generateJSONPatch(before, after, { maxDepth: 3 });
       expect(patch).to.eql([
         {
           op: 'replace',
@@ -699,23 +699,29 @@ describe('a generate json patch function', () => {
     it('creates empty patch for arrays with object hash', () => {
       const before = {
         obj: {
-          arrayField: [{nested: {id: 'one', value: 'hello'}}, {
-            nested: {
-              id: 'two',
-              value: 'world'
-            }
-          }]
-        }
+          arrayField: [
+            { nested: { id: 'one', value: 'hello' } },
+            {
+              nested: {
+                id: 'two',
+                value: 'world',
+              },
+            },
+          ],
+        },
       };
       const after = {
         obj: {
-          arrayField: [{nested: {value: 'hello', id: 'one',}}, {
-            nested: {
-              id: 'two',
-              value: 'world'
-            }
-          }]
-        }
+          arrayField: [
+            { nested: { value: 'hello', id: 'one' } },
+            {
+              nested: {
+                id: 'two',
+                value: 'world',
+              },
+            },
+          ],
+        },
       };
 
       const patch = generateJSONPatch(before, after, {
@@ -734,7 +740,7 @@ describe('a generate json patch function', () => {
     it('detects changes as a given depth of 4', () => {
       const afterModified = structuredClone(after);
       afterModified.firstLevel.secondLevel.thirdLevelTwo = 'hello-world';
-      const patch = generateJSONPatch(before, afterModified, {maxDepth: 4});
+      const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
       expect(patch).to.eql([
         {
           op: 'replace',
@@ -754,7 +760,7 @@ describe('a generate json patch function', () => {
     it('detects changes as a given depth of 4 for an array value', () => {
       const afterModified = structuredClone(before);
       afterModified.firstLevel.secondLevel.thirdLevelThree = ['test'];
-      const patch = generateJSONPatch(before, afterModified, {maxDepth: 4});
+      const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
       expect(patch).to.eql([
         {
           op: 'replace',
@@ -768,7 +774,7 @@ describe('a generate json patch function', () => {
       const afterModified = structuredClone(before);
       // @ts-ignore
       delete afterModified.firstLevel.secondLevel.thirdLevelThree;
-      const patch = generateJSONPatch(before, afterModified, {maxDepth: 4});
+      const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
       expect(patch).to.eql([
         {
           op: 'remove',
@@ -781,7 +787,7 @@ describe('a generate json patch function', () => {
       const afterModified = structuredClone(before);
       // @ts-ignore
       afterModified.firstLevel.secondLevel.thirdLevelThree = null;
-      const patch = generateJSONPatch(before, afterModified, {maxDepth: 4});
+      const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
       expect(patch).to.eql([
         {
           op: 'replace',
