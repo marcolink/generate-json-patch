@@ -679,7 +679,7 @@ describe('a generate json patch function', () => {
       },
     };
 
-    it('detects changes as a given depth of 3', () => {
+    it('detects changes at a given depth of 3', () => {
       const patch = generateJSONPatch(before, after, { maxDepth: 3 });
       expect(patch).to.eql([
         {
@@ -737,7 +737,7 @@ describe('a generate json patch function', () => {
       expect(patch).to.eql([]);
     });
 
-    it('detects changes as a given depth of 4', () => {
+    it('detects changes at a given depth of 4', () => {
       const afterModified = structuredClone(after);
       afterModified.firstLevel.secondLevel.thirdLevelTwo = 'hello-world';
       const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
@@ -757,7 +757,7 @@ describe('a generate json patch function', () => {
       ]);
     });
 
-    it('detects changes as a given depth of 4 for an array value', () => {
+    it('detects changes at a given depth of 4 for an array value', () => {
       const afterModified = structuredClone(before);
       afterModified.firstLevel.secondLevel.thirdLevelThree = ['test'];
       const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
@@ -770,7 +770,7 @@ describe('a generate json patch function', () => {
       ]);
     });
 
-    it('detects changes as a given depth of 4 for an removed array value', () => {
+    it('detects changes as a given depth of 4 for a removed array value', () => {
       const afterModified = structuredClone(before);
       // @ts-ignore
       delete afterModified.firstLevel.secondLevel.thirdLevelThree;
@@ -783,7 +783,7 @@ describe('a generate json patch function', () => {
       ]);
     });
 
-    it('detects changes as a given depth of 4 for an nullyfied array value', () => {
+    it('detects changes as a given depth of 4 for a nullyfied array value', () => {
       const afterModified = structuredClone(before);
       // @ts-ignore
       afterModified.firstLevel.secondLevel.thirdLevelThree = null;
@@ -795,6 +795,33 @@ describe('a generate json patch function', () => {
           value: null,
         },
       ]);
+    });
+
+    it('ignores key order on objects when comparing at max depth', () => {
+      const before = {
+        a: {
+          b: {
+            c: {
+              d: 'hello',
+              e: 'world',
+            },
+          },
+        },
+      };
+
+      const after = {
+        a: {
+          b: {
+            c: {
+              e: 'world',
+              d: 'hello',
+            },
+          },
+        },
+      };
+
+      const patch = generateJSONPatch(before, after, { maxDepth: 1 });
+      expect(patch).to.eql([]);
     });
   });
 });
