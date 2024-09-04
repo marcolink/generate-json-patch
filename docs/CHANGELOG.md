@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/marcolink/generate-json-patch/compare/v1.2.2...v1.2.3) (2024-09-04)
+
+
+### Bug Fixes
+
+* **maxDepth:** do not return a replace operation for identical array hashes ([128034e](https://github.com/marcolink/generate-json-patch/commit/128034ed26253830a26e385817a66151f522d641))
+
 ## [1.2.2](https://github.com/marcolink/generate-json-patch/compare/v1.2.1...v1.2.2) (2024-09-03)
 
 
