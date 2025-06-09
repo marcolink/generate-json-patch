@@ -5,12 +5,6 @@
   "functions": 95,
   "lines": 95,
   "check-coverage": true,
-  "exclude": [
-    "src/*.spec.ts"
-  ],
-  "reporter": [
-    "text-summary",
-    "lcov",
-    "clover"
-  ]
+  "exclude": ["src/*.spec.ts"],
+  "reporter": ["text-summary", "lcov", "clover"]
 }
