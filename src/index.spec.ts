@@ -21,6 +21,7 @@ const jsonValues = {
   jsonObjectWithFlatPropertiesAndStringValues: { a: 'a', b: 'b', c: 'c' },
   jsonObjectWithFlatPropertiesAndNumberValues: { a: 3, b: 2, c: 1 },
   jsonObjectWithFlatPropertiesAndMixedValues: { a: true, b: 'b', c: 12 },
+  jsonObjectWithHasOwnProperty: { a: true, hasOwnProperty: null },
 } as const;
 
 describe('a generate json patch function', () => {
