@@ -204,12 +204,16 @@ export function generateJSONPatch(
           } else {
             compareObjects(newPath, leftValue, rightValue);
           }
-        } else if (leftJsonValue.hasOwnProperty(rightKey)) {
+        } else if (
+          Object.prototype.hasOwnProperty.call(leftJsonValue, rightKey)
+        ) {
           patch.push({ op: 'replace', path: newPath, value: rightValue });
         } else {
           patch.push({ op: 'add', path: newPath, value: rightValue });
         }
-      } else if (!leftJsonValue.hasOwnProperty(rightKey)) {
+      } else if (
+        !Object.prototype.hasOwnProperty.call(leftJsonValue, rightKey)
+      ) {
         patch.push({ op: 'add', path: newPath, value: rightValue });
       } else if (leftValue !== rightValue) {
         patch.push({ op: 'replace', path: newPath, value: rightValue });
@@ -218,12 +222,12 @@ export function generateJSONPatch(
 
     for (const leftKey in leftJsonValue) {
       if (
-        !leftJsonValue.hasOwnProperty(leftKey) ||
+        !Object.prototype.hasOwnProperty.call(leftJsonValue, leftKey) ||
         (hasPropertyFilter && !propertyFilter(leftKey, { side: 'left', path }))
       )
         continue;
 
-      if (!rightJsonValue.hasOwnProperty(leftKey)) {
+      if (!Object.prototype.hasOwnProperty.call(rightJsonValue, leftKey)) {
         let newPath =
           isArrayAtTop && path === '' ? `/${leftKey}` : `${path}/${leftKey}`;
         patch.push({ op: 'remove', path: newPath });
