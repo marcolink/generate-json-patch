@@ -824,6 +824,35 @@ describe('a generate json patch function', () => {
       expect(patch).to.eql([]);
     });
   });
+
+  describe('with object prototypes', () => {
+    it('handles objects', () => {
+      class MySubObject {
+        c = '';
+        d = 0;
+      }
+
+      class MyObject {
+        a = new MySubObject();
+        b = '';
+
+        method() {
+          return 'hello';
+        }
+      }
+
+      const before = new MyObject();
+      const after = new MyObject();
+      after.b = 'changed';
+      after.a.d = 42;
+
+      const patch = generateJSONPatch(before, after);
+      expect(patch).to.eql([
+        { op: 'replace', path: '/a/d', value: 42 },
+        { op: 'replace', path: '/b', value: 'changed' },
+      ]);
+    });
+  });
 });
 
 function doPatch(json: JsonValue, patch: Patch) {
