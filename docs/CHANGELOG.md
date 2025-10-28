@@ -1,3 +1,10 @@
+## [1.2.5](https://github.com/marcolink/generate-json-patch/compare/v1.2.4...v1.2.5) (2025-10-28)
+
+
+### Bug Fixes
+
+* object with hasOwnProperty key ([#15](https://github.com/marcolink/generate-json-patch/issues/15)) ([93ad8e2](https://github.com/marcolink/generate-json-patch/commit/93ad8e2dfca4c0977e3e310c10c6b3ee997c5415))
+
 ## [1.2.4](https://github.com/marcolink/generate-json-patch/compare/v1.2.3...v1.2.4) (2024-09-04)
 
 
