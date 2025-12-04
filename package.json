@@ -5,6 +5,7 @@
   "private": false,
   "repository": "marcolink/generate-json-patch",
   "homepage": "https://github.com/marcolink/generate-json-patch",
+  "packageManager": "pnpm@8.6.12",
   "license": "MIT",
   "description": "A simple function to diff any two objects and generate a JSON Patch",
   "main": "dist/index.mjs",
@@ -15,9 +16,9 @@
     "README.md"
   ],
   "exports": {
+    "node": "./dist/index.js",
     "require": "./dist/index.js",
     "import": "./dist/index.mjs",
-    "node": "./dist/index.js",
     "default": "./dist/index.js"
   },
   "keywords": [
@@ -30,12 +31,12 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts",
-    "test": "ts-mocha -p tsconfig.json src/*.spec.ts",
-    "test-watch": "npm run test -- -w --watch-files '**/*.ts'",
-    "test-coverage": "nyc npm run test",
+    "test": "node --import tsx --test src/**/*.spec.ts",
+    "test-watch": "node --import tsx --test --watch src/**/*.spec.ts",
+    "test-coverage": "node --import tsx --experimental-test-coverage --test src/**/*.spec.ts",
     "lint": "eslint --ext .ts ./src",
-    "lint-fix": "npm run lint -- --fix",
-    "presemantic-release": "yarn run build",
+    "lint-fix": "pnpm run lint --fix",
+    "presemantic-release": "pnpm run build",
     "semantic-release": "semantic-release"
   },
   "prettier": {
@@ -58,20 +59,16 @@
   "devDependencies": {
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@types/chai": "^4.3.5",
-    "@types/mocha": "^10.0.1",
+    "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^6.2.0",
     "@typescript-eslint/parser": "^6.2.0",
-    "chai": "^4.3.7",
     "eslint": "^8.45.0",
     "eslint-config-prettier": "^8.9.0",
     "eslint-plugin-prettier": "^5.0.0",
     "fast-json-patch": "^3.1.1",
-    "mocha-ts": "^0.0.0",
-    "nyc": "^15.1.0",
     "semantic-release": "^21.1.1",
-    "ts-mocha": "^10.0.0",
-    "tsup": "^7.1.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.16.2",
     "typescript": "^5.1.6"
   },
   "release": {
