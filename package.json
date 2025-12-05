@@ -57,19 +57,22 @@
     "dts": true
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@eslint/js": "^9.39.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^6.2.0",
-    "@typescript-eslint/parser": "^6.2.0",
-    "eslint": "^8.45.0",
-    "eslint-config-prettier": "^8.9.0",
-    "eslint-plugin-prettier": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.48.1",
+    "@typescript-eslint/parser": "^8.48.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.4",
     "fast-json-patch": "^3.1.1",
-    "semantic-release": "^21.1.1",
+    "globals": "^16.5.0",
+    "semantic-release": "^25.0.2",
     "tsup": "^8.5.1",
     "tsx": "^4.16.2",
-    "typescript": "^5.1.6"
+    "typescript": "^5.9.3"
   },
   "release": {
     "branches": [
