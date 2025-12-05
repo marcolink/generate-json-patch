@@ -1,12 +1,13 @@
-import type { JsonValue, ObjectHashContext, Patch } from './index';
-import { generateJSONPatch, pathInfo } from './index';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import { applyPatch, deepClone } from 'fast-json-patch';
-import { assert, expect } from 'chai';
-
-type Title = string;
-type Before = JsonValue;
-type After = JsonValue;
-type TestDefinition = [Title, Before, After, Patch];
+import {
+  generateJSONPatch,
+  pathInfo,
+  type JsonValue,
+  type ObjectHashContext,
+  type Patch,
+} from './index';
 
 const jsonValues = {
   arrayOfNumbers: [1, 2, 4],
@@ -24,7 +25,7 @@ const jsonValues = {
   jsonObjectWithHasOwnProperty: { a: true, hasOwnProperty: null },
 } as const;
 
-describe('a generate json patch function', () => {
+describe('generateJSONPatch', () => {
   describe('can do all operations on different shaped JSON values', () => {
     const keys = Object.keys(jsonValues);
     const keyPairs = keys.flatMap((key, i) =>
@@ -33,17 +34,17 @@ describe('a generate json patch function', () => {
 
     keyPairs.forEach(([keyOne, keyTwo]) => {
       it(`${splitKey(keyOne)} becomes ${splitKey(keyTwo)}`, () => {
-        // @ts-ignore
+        // @ts-expect-error allow indexing const map
         expectPatchedEqualsAfter(jsonValues[keyOne], jsonValues[keyTwo]);
       });
       it(`${splitKey(keyTwo)} becomes ${splitKey(keyOne)}`, () => {
-        // @ts-ignore
+        // @ts-expect-error allow indexing const map
         expectPatchedEqualsAfter(jsonValues[keyTwo], jsonValues[keyOne]);
       });
     });
   });
 
-  const tests: TestDefinition[] = [
+  const tests: [string, JsonValue, JsonValue, Patch][] = [
     [
       'adds root array elements',
       [1, 2, 3],
@@ -216,7 +217,7 @@ describe('a generate json patch function', () => {
 
       assert.throws(() =>
         generateJSONPatch(before, after, {
-          // @ts-ignore
+          // @ts-expect-error intentional misconfig
           objectHash: 'not-a-function',
         })
       );
@@ -239,7 +240,7 @@ describe('a generate json patch function', () => {
       });
 
       const patched = doPatch(before, patch);
-      expect(patched).to.be.eql([
+      assert.deepStrictEqual(patched, [
         { id: 2, paramOne: 'current' },
         { id: 1, paramOne: 'current' },
       ]);
@@ -263,8 +264,7 @@ describe('a generate json patch function', () => {
       });
       const patched = doPatch(before, patch);
 
-      // as long as we do not support move, the result will be different from 'after' in its order
-      expect(patched).to.be.eql([
+      assert.deepStrictEqual(patched, [
         {
           id: 1,
           paramOne: 'future',
@@ -305,7 +305,7 @@ describe('a generate json patch function', () => {
         },
       });
 
-      expect(patch).to.be.eql([
+      assert.deepStrictEqual(patch, [
         {
           op: 'replace',
           path: '/1/value',
@@ -373,7 +373,7 @@ describe('a generate json patch function', () => {
 
       const patched = doPatch(before, patch);
 
-      expect(patched).to.eql(after);
+      assert.deepStrictEqual(patched, after);
     });
 
     it('handles changes with change and move on the same property and removed elements', () => {
@@ -400,6 +400,10 @@ describe('a generate json patch function', () => {
           id: 1,
           value: 'right',
         },
+        {
+          id: 2,
+          value: 'right',
+        },
       ];
 
       const patch = generateJSONPatch(before, after, {
@@ -410,7 +414,7 @@ describe('a generate json patch function', () => {
 
       const patched = doPatch(before, patch);
 
-      expect(patched).to.eql(after);
+      assert.deepStrictEqual(patched, after);
     });
 
     it('handles changes with change and move on the same property and added/removed elements', () => {
@@ -451,10 +455,10 @@ describe('a generate json patch function', () => {
 
       const patched = doPatch(before, patch);
 
-      expect(patched).to.eql(after);
+      assert.deepStrictEqual(patched, after);
     });
 
-    it('handles changes with on array but ignores moves', () => {
+    it('handles changes on array but ignores moves', () => {
       const before = [
         {
           id: 1,
@@ -493,7 +497,7 @@ describe('a generate json patch function', () => {
 
       const patched = doPatch(before, patch);
 
-      expect(patched).to.eql([
+      assert.deepStrictEqual(patched, [
         {
           id: 1,
           value: 'right',
@@ -538,17 +542,17 @@ describe('a generate json patch function', () => {
         objectHash: function (value: JsonValue, context: ObjectHashContext) {
           const { length, last } = pathInfo(context.path);
           if (length === 2 && last === 'engine') {
-            // @ts-ignore
-            return value?.name;
+            // @ts-expect-error accessing property on JsonValue
+            return (value as any)?.name;
           }
           return context.index.toString();
         },
       });
 
       const patched = doPatch(before, patch);
-      expect(patched).to.be.eql(after);
+      assert.deepStrictEqual(patched, after);
 
-      expect(patch).to.be.eql([
+      assert.deepStrictEqual(patch, [
         { op: 'replace', path: '/engine/3/hp', value: 138 },
         { op: 'move', from: '/engine/3', path: '/engine/0' },
       ]);
@@ -582,7 +586,7 @@ describe('a generate json patch function', () => {
       });
 
       const patched = doPatch(before, patch);
-      expect(patched).to.be.eql({
+      assert.deepStrictEqual(patched, {
         id: 1,
         paramOne: 'after',
         paramTwo: { ignoreMe: 'before', doNotIgnoreMe: 'after' },
@@ -622,7 +626,7 @@ describe('a generate json patch function', () => {
       });
 
       const patched = doPatch(before, patch);
-      expect(patched).to.be.eql({
+      assert.deepStrictEqual(patched, {
         id: 1,
         paramOne: 'after',
         paramTwo: {
@@ -632,7 +636,7 @@ describe('a generate json patch function', () => {
         },
       });
 
-      expect(patch).to.eql([
+      assert.deepStrictEqual(patch, [
         { op: 'replace', path: '/paramOne', value: 'after' },
         { op: 'replace', path: '/paramTwo/doNotIgnoreMe', value: 'after' },
         { op: 'replace', path: '/paramTwo/two/ignoreMe', value: 'after' },
@@ -646,9 +650,9 @@ describe('a generate json patch function', () => {
       const patch = generateJSONPatch(before, after);
 
       const patched = doPatch(before, patch);
-      expect(patched).to.be.eql([1]);
+      assert.deepStrictEqual(patched, [1]);
 
-      expect(patch).to.eql([
+      assert.deepStrictEqual(patch, [
         { op: 'remove', path: '/2' },
         { op: 'remove', path: '/1' },
       ]);
@@ -682,7 +686,7 @@ describe('a generate json patch function', () => {
 
     it('detects changes at a given depth of 3', () => {
       const patch = generateJSONPatch(before, after, { maxDepth: 3 });
-      expect(patch).to.eql([
+      assert.deepStrictEqual(patch, [
         {
           op: 'replace',
           path: '/firstLevel/secondLevel',
@@ -698,7 +702,7 @@ describe('a generate json patch function', () => {
     });
 
     it('creates empty patch for arrays with object hash', () => {
-      const before = {
+      const beforeDeep = {
         obj: {
           arrayField: [
             { nested: { id: 'one', value: 'hello' } },
@@ -711,7 +715,7 @@ describe('a generate json patch function', () => {
           ],
         },
       };
-      const after = {
+      const afterDeep = {
         obj: {
           arrayField: [
             { nested: { value: 'hello', id: 'one' } },
@@ -725,24 +729,23 @@ describe('a generate json patch function', () => {
         },
       };
 
-      const patch = generateJSONPatch(before, after, {
+      const patch = generateJSONPatch(beforeDeep, afterDeep, {
         maxDepth: 3,
-        objectHash: function (obj, context) {
+        objectHash: function (obj: any, context) {
           if (context.path === '/obj/arrayField') {
-            // @ts-ignore
             return obj.nested.id;
           }
           return context.index.toString();
         },
       });
-      expect(patch).to.eql([]);
+      assert.deepStrictEqual(patch, []);
     });
 
     it('detects changes at a given depth of 4', () => {
       const afterModified = structuredClone(after);
       afterModified.firstLevel.secondLevel.thirdLevelTwo = 'hello-world';
       const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
-      expect(patch).to.eql([
+      assert.deepStrictEqual(patch, [
         {
           op: 'replace',
           path: '/firstLevel/secondLevel/thirdLevel',
@@ -762,7 +765,7 @@ describe('a generate json patch function', () => {
       const afterModified = structuredClone(before);
       afterModified.firstLevel.secondLevel.thirdLevelThree = ['test'];
       const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
-      expect(patch).to.eql([
+      assert.deepStrictEqual(patch, [
         {
           op: 'replace',
           path: '/firstLevel/secondLevel/thirdLevelThree',
@@ -773,10 +776,10 @@ describe('a generate json patch function', () => {
 
     it('detects changes as a given depth of 4 for a removed array value', () => {
       const afterModified = structuredClone(before);
-      // @ts-ignore
+      // @ts-expect-error deleting optional value for test
       delete afterModified.firstLevel.secondLevel.thirdLevelThree;
       const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
-      expect(patch).to.eql([
+      assert.deepStrictEqual(patch, [
         {
           op: 'remove',
           path: '/firstLevel/secondLevel/thirdLevelThree',
@@ -786,10 +789,10 @@ describe('a generate json patch function', () => {
 
     it('detects changes as a given depth of 4 for a nullyfied array value', () => {
       const afterModified = structuredClone(before);
-      // @ts-ignore
+      // @ts-expect-error assigning null for test
       afterModified.firstLevel.secondLevel.thirdLevelThree = null;
       const patch = generateJSONPatch(before, afterModified, { maxDepth: 4 });
-      expect(patch).to.eql([
+      assert.deepStrictEqual(patch, [
         {
           op: 'replace',
           path: '/firstLevel/secondLevel/thirdLevelThree',
@@ -799,7 +802,7 @@ describe('a generate json patch function', () => {
     });
 
     it('ignores key order on objects when comparing at max depth', () => {
-      const before = {
+      const beforeShuffled = {
         a: {
           b: {
             c: {
@@ -810,7 +813,7 @@ describe('a generate json patch function', () => {
         },
       };
 
-      const after = {
+      const afterShuffled = {
         a: {
           b: {
             c: {
@@ -821,8 +824,10 @@ describe('a generate json patch function', () => {
         },
       };
 
-      const patch = generateJSONPatch(before, after, { maxDepth: 1 });
-      expect(patch).to.eql([]);
+      const patch = generateJSONPatch(beforeShuffled, afterShuffled, {
+        maxDepth: 1,
+      });
+      assert.deepStrictEqual(patch, []);
     });
   });
 });
@@ -834,7 +839,7 @@ function doPatch(json: JsonValue, patch: Patch) {
 function expectPatchedEqualsAfter(before: JsonValue, after: JsonValue) {
   const patch = generateJSONPatch(before, after);
   const patched = doPatch(before, patch);
-  expect(patched).to.be.eql(after);
+  assert.deepStrictEqual(patched, after);
 }
 
 function expectPatch(
@@ -843,7 +848,7 @@ function expectPatch(
   expectedPatch: Patch
 ) {
   const patch = generateJSONPatch(before, after);
-  expect(patch).to.be.eql(expectedPatch);
+  assert.deepStrictEqual(patch, expectedPatch);
 }
 
 function splitKey(input: string): string {

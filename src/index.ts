@@ -290,3 +290,5 @@ export function pathInfo(path: string): PathInfoResult {
   const last = segments[length - 1];
   return { segments, length, last };
 }
+
+export { moveOperations, longestCommonSequence } from './move-operations';
