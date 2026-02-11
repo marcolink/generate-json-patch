@@ -241,12 +241,20 @@ export function generateJSONPatch(
 const tokenEscapedTildeRegExp = /~/g;
 const tokenEscapedSlashRegExp = /\//g;
 
+/**
+ * Escapes a JSON Pointer reference token per RFC 6901.
+ * Order matters: "~" must be replaced before "/" to preserve "~1" sequences.
+ */
 function escapeReferenceToken(token: string): string {
   return token
     .replace(tokenEscapedTildeRegExp, '~0')
     .replace(tokenEscapedSlashRegExp, '~1');
 }
 
+/**
+ * Builds an RFC 6901-compliant JSON Pointer path by escaping a key token
+ * and appending it to the current path.
+ */
 function buildPath(path: string, key: string): string {
   const escapedKey = escapeReferenceToken(key);
   if (path === '') {
