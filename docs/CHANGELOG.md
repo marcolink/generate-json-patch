@@ -1,3 +1,10 @@
+## [1.2.7](https://github.com/marcolink/generate-json-patch/compare/v1.2.6...v1.2.7) (2026-02-12)
+
+
+### Bug Fixes
+
+* **ci:** remove setup-node registry auth for npm trusted publishing ([32d468d](https://github.com/marcolink/generate-json-patch/commit/32d468d664704afa5fea50327b31860b4098b45c))
+
 ## [1.2.6](https://github.com/marcolink/generate-json-patch/compare/v1.2.5...v1.2.6) (2026-02-12)
 
 
