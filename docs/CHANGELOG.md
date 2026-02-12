@@ -1,3 +1,10 @@
+## [1.2.8](https://github.com/marcolink/generate-json-patch/compare/v1.2.7...v1.2.8) (2026-02-12)
+
+
+### Bug Fixes
+
+* update npm trusted publishing release config ([a6197dd](https://github.com/marcolink/generate-json-patch/commit/a6197ddf3dac1435d82e9884990c9dd3ef44a22f))
+
 ## [1.2.7](https://github.com/marcolink/generate-json-patch/compare/v1.2.6...v1.2.7) (2026-02-12)
 
 
