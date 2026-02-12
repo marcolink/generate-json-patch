@@ -275,7 +275,7 @@ function isPrimitiveValue(value: JsonValue): value is JsonValue {
 }
 
 function isJsonObject(value: JsonValue): value is JsonObject {
-  return value?.constructor === Object;
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
 function deepEqual(objA: any, objB: any) {
