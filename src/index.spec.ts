@@ -198,6 +198,142 @@ describe('generateJSONPatch', () => {
         },
       ],
     ],
+    [
+      'escapes object keys in JSON Pointer paths',
+      {
+        data: {
+          'a/b': 1,
+          'c/d': {
+            '/e/f': 3,
+          },
+        },
+      },
+      {
+        data: {
+          'c/d': {
+            '/e/f': 2,
+          },
+          '/g/h': 3,
+          'i~j/k': 4,
+        },
+      },
+      [
+        {
+          op: 'replace',
+          path: '/data/c~1d/~1e~1f',
+          value: 2,
+        },
+        {
+          op: 'add',
+          path: '/data/~1g~1h',
+          value: 3,
+        },
+        {
+          op: 'add',
+          path: '/data/i~0j~1k',
+          value: 4,
+        },
+        {
+          op: 'remove',
+          path: '/data/a~1b',
+        },
+      ],
+    ],
+    [
+      'preserves RFC6901 escape ordering for tokens containing "~1"',
+      {
+        data: {
+          '~1': 10,
+        },
+      },
+      {
+        data: {
+          '~1': 11,
+        },
+      },
+      [
+        {
+          op: 'replace',
+          path: '/data/~01',
+          value: 11,
+        },
+      ],
+    ],
+    [
+      'supports empty string object keys',
+      {
+        '': 1,
+        nested: {
+          '': 1,
+        },
+      },
+      {
+        '': 2,
+        nested: {
+          '': 2,
+        },
+      },
+      [
+        {
+          op: 'replace',
+          path: '/',
+          value: 2,
+        },
+        {
+          op: 'replace',
+          path: '/nested/',
+          value: 2,
+        },
+      ],
+    ],
+    [
+      'does not escape non-reserved JSON Pointer token characters',
+      {
+        data: {},
+      },
+      {
+        data: {
+          'c%d': 2,
+          'e^f': 3,
+          'g|h': 4,
+          'i\\j': 5,
+          'k"l': 6,
+          ' ': 7,
+        },
+      },
+      [
+        {
+          op: 'add',
+          path: '/data/c%d',
+          value: 2,
+        },
+        {
+          op: 'add',
+          path: '/data/e^f',
+          value: 3,
+        },
+        {
+          op: 'add',
+          path: '/data/g|h',
+          value: 4,
+        },
+        {
+          op: 'add',
+          path: '/data/i\\j',
+          value: 5,
+        },
+        {
+          op: 'add',
+          path: '/data/k"l',
+          value: 6,
+        },
+        {
+          op: 'add',
+          path: '/data/ ',
+          value: 7,
+        },
+      ],
+    ],
   ];
   tests.forEach(([testTitle, beforeJson, afterJson, patch]) => {
     describe(testTitle, () => {
@@ -557,6 +693,32 @@ describe('generateJSONPatch', () => {
         { op: 'move', from: '/engine/3', path: '/engine/0' },
       ]);
     });
+
+    it('escapes move operation paths for arrays nested under escaped keys', () => {
+      const before = {
+        'a/b': [{ id: 1 }, { id: 2 }],
+      };
+      const after = {
+        'a/b': [{ id: 2 }, { id: 1 }],
+      };
+
+      const patch = generateJSONPatch(before, after, {
+        objectHash: function (obj: any) {
+          return `${obj.id}`;
+        },
+      });
+
+      assert.deepStrictEqual(patch, [
+        {
+          op: 'move',
+          from: '/a~1b/1',
+          path: '/a~1b/0',
+        },
+      ]);
+
+      const patched = doPatch(before, patch);
+      assert.deepStrictEqual(patched, after);
+    });
   });
 
   describe('with property filter', () => {
@@ -828,6 +990,38 @@ describe('generateJSONPatch', () => {
         maxDepth: 1,
       });
       assert.deepStrictEqual(patch, []);
+    });
+
+    it('does not overcount depth when keys contain slashes', () => {
+      const beforeWithSlashKey = {
+        'a/b': {
+          child: {
+            value: 'before',
+          },
+          stable: true,
+        },
+      };
+      const afterWithSlashKey = {
+        'a/b': {
+          child: {
+            value: 'after',
+          },
+          stable: true,
+        },
+      };
+
+      const patch = generateJSONPatch(beforeWithSlashKey, afterWithSlashKey, {
+        maxDepth: 3,
+      });
+      assert.deepStrictEqual(patch, [
+        {
+          op: 'replace',
+          path: '/a~1b/child',
+          value: {
+            value: 'after',
+          },
+        },
+      ]);
     });
   });
 });

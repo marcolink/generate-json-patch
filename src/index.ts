@@ -188,8 +188,7 @@ export function generateJSONPatch(
       )
         continue;
 
-      let newPath =
-        isArrayAtTop && path === '' ? `/${rightKey}` : `${path}/${rightKey}`;
+      const newPath = buildPath(path, rightKey);
       const leftValue = leftJsonValue[rightKey];
       const rightValue = rightJsonValue[rightKey];
 
@@ -228,8 +227,7 @@ export function generateJSONPatch(
         continue;
 
       if (!Object.prototype.hasOwnProperty.call(rightJsonValue, leftKey)) {
-        let newPath =
-          isArrayAtTop && path === '' ? `/${leftKey}` : `${path}/${leftKey}`;
+        const newPath = buildPath(path, leftKey);
         patch.push({ op: 'remove', path: newPath });
       }
     }
@@ -238,6 +236,31 @@ export function generateJSONPatch(
   compareObjects('', before, after);
 
   return [...patch];
+}
+
+const tokenEscapedTildeRegExp = /~/g;
+const tokenEscapedSlashRegExp = /\//g;
+
+/**
+ * Escapes a JSON Pointer reference token per RFC 6901.
+ * Order matters: "~" must be replaced before "/" to preserve "~1" sequences.
+ */
+function escapeReferenceToken(token: string): string {
+  return token
+    .replace(tokenEscapedTildeRegExp, '~0')
+    .replace(tokenEscapedSlashRegExp, '~1');
+}
+
+/**
+ * Builds an RFC 6901-compliant JSON Pointer path by escaping a key token
+ * and appending it to the current path.
+ */
+function buildPath(path: string, key: string): string {
+  const escapedKey = escapeReferenceToken(key);
+  if (path === '') {
+    return `/${escapedKey}`;
+  }
+  return `${path}/${escapedKey}`;
 }
 
 function isPrimitiveValue(value: JsonValue): value is JsonValue {
