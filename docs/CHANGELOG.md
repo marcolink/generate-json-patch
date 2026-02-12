@@ -1,3 +1,10 @@
+## [1.2.6](https://github.com/marcolink/generate-json-patch/compare/v1.2.5...v1.2.6) (2026-02-12)
+
+
+### Bug Fixes
+
+* escape JSON pointer tokens in generated paths ([#22](https://github.com/marcolink/generate-json-patch/issues/22)) ([ff12c21](https://github.com/marcolink/generate-json-patch/commit/ff12c212a720778cf93aa72f8076247a7864975e))
+
 ## [1.2.5](https://github.com/marcolink/generate-json-patch/compare/v1.2.4...v1.2.5) (2025-10-28)
 
 

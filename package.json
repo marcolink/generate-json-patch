@@ -1,6 +1,6 @@
 {
   "name": "generate-json-patch",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "author": "Marco Link <marcoxlink@gmail.com>",
   "private": false,
   "repository": "marcolink/generate-json-patch",
