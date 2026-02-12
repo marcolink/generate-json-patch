@@ -36,6 +36,12 @@ jobs:
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
+      - name: Ensure npm supports trusted publishing
+        run: |
+          echo "Before upgrade: node $(node --version), npm $(npm --version)"
+          npm install -g npm@^11.5.1
+          echo "After upgrade: node $(node --version), npm $(npm --version)"
+
       - name: Install Dependencies
         run: pnpm install --frozen-lockfile
 
