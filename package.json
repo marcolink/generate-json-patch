@@ -39,7 +39,6 @@
     "test-coverage": "node --import tsx --experimental-test-coverage --test src/**/*.spec.ts",
     "lint": "eslint --ext .ts ./src",
     "lint-fix": "pnpm run lint --fix",
-    "presemantic-release": "pnpm run build",
     "semantic-release": "semantic-release"
   },
   "prettier": {

@@ -48,6 +48,9 @@ jobs:
       - name: Run Tests
         run: pnpm run test
 
+      - name: Build
+        run: pnpm run build
+
       - name: Release
         run: pnpm run semantic-release
         env:
