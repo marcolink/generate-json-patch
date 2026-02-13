@@ -1,3 +1,10 @@
+## [1.2.9](https://github.com/marcolink/generate-json-patch/compare/v1.2.8...v1.2.9) (2026-02-13)
+
+
+### Bug Fixes
+
+* release with dist folder ([d99e792](https://github.com/marcolink/generate-json-patch/commit/d99e7929cbcda0b332904cedb2953c89cb50617c))
+
 ## [1.2.8](https://github.com/marcolink/generate-json-patch/compare/v1.2.7...v1.2.8) (2026-02-12)
 
 
