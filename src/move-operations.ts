@@ -36,6 +36,13 @@ export function moveOperations(
   rightHashes: string[],
   currentPath = ''
 ): MoveOperation[] {
+  if (
+    leftHashes.length === rightHashes.length &&
+    leftHashes.every((hash, index) => hash === rightHashes[index])
+  ) {
+    return [];
+  }
+
   const { sequence } = longestCommonSequence(leftHashes, rightHashes);
   const operations: MoveOperation[] = [];
   let workingArr = [...leftHashes];

@@ -14,6 +14,19 @@ describe('a moveOperations function', () => {
     );
   });
 
+  it('returns no moves for identical order with duplicate hashes', () => {
+    assert.deepStrictEqual(
+      moveOperations(['a', 'a', 'b'], ['a', 'a', 'b']),
+      []
+    );
+  });
+
+  it('still detects moves when matching prefixes have different lengths', () => {
+    assert.deepStrictEqual(moveOperations(['a'], ['a', 'b', 'a']), [
+      { op: 'move', from: '/0', path: '/2' },
+    ]);
+  });
+
   it('returns a single move operation when given two arrays with one value moved', () => {
     assert.deepStrictEqual(moveOperations(['1', '2', '3'], ['1', '3', '2']), [
       { op: 'move', from: '/2', path: '/1' },
