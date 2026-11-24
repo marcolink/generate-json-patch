@@ -1,3 +1,10 @@
+## [1.2.10](https://github.com/marcolink/generate-json-patch/compare/v1.2.9...v1.2.10) (2026-11-24)
+
+
+### Performance Improvements
+
+* speed up array move detection ([#26](https://github.com/marcolink/generate-json-patch/issues/26)) ([2fd4851](https://github.com/marcolink/generate-json-patch/commit/2fd4851c0cec93b523114f56320693e1e723a1f0))
+
 ## [1.2.9](https://github.com/marcolink/generate-json-patch/compare/v1.2.8...v1.2.9) (2026-02-13)
 
 
