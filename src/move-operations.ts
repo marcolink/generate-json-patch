@@ -6,28 +6,27 @@ export function longestCommonSequence(
 ) {
   const m = leftHashes.length;
   const n = rightHashes.length;
-  const dp: number[][] = Array.from({ length: m + 1 }, () =>
-    Array(n + 1).fill(0)
-  );
-  let longestSequence: string[] = [];
+  const row = new Uint32Array(n + 1);
+  let length = 0;
   let offset: number | null = null;
 
   for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
+    // Walk backwards so row[j - 1] still belongs to the previous row.
+    for (let j = n; j >= 1; j--) {
       if (leftHashes[i - 1] === rightHashes[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1] + 1;
-        if (dp[i][j] > longestSequence.length) {
-          longestSequence = leftHashes.slice(i - dp[i][j], i);
-          offset = i - dp[i][j];
+        row[j] = row[j - 1] + 1;
+        if (row[j] > length) {
+          length = row[j];
+          offset = i - length;
         }
       } else {
-        dp[i][j] = 0;
+        row[j] = 0;
       }
     }
   }
   return {
-    length: longestSequence.length,
-    sequence: longestSequence,
+    length,
+    sequence: offset === null ? [] : leftHashes.slice(offset, offset + length),
     offset,
   };
 }
@@ -37,6 +36,13 @@ export function moveOperations(
   rightHashes: string[],
   currentPath = ''
 ): MoveOperation[] {
+  if (
+    leftHashes.length === rightHashes.length &&
+    leftHashes.every((hash, index) => hash === rightHashes[index])
+  ) {
+    return [];
+  }
+
   const { sequence } = longestCommonSequence(leftHashes, rightHashes);
   const operations: MoveOperation[] = [];
   let workingArr = [...leftHashes];
