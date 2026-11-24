@@ -8,7 +8,7 @@
     "url": "git+https://github.com/marcolink/generate-json-patch.git"
   },
   "homepage": "https://github.com/marcolink/generate-json-patch",
-  "packageManager": "pnpm@8.6.12",
+  "packageManager": "pnpm@12.23.0",
   "license": "MIT",
   "description": "A simple function to diff any two objects and generate a JSON Patch",
   "main": "dist/index.mjs",
@@ -59,22 +59,22 @@
     "dts": true
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
-    "@eslint/js": "^9.39.1",
-    "@semantic-release/changelog": "^6.0.3",
-    "@semantic-release/git": "^10.0.1",
-    "@types/node": "^24.10.1",
-    "@typescript-eslint/eslint-plugin": "^8.48.1",
-    "@typescript-eslint/parser": "^8.48.1",
-    "eslint": "^9.39.1",
+    "@eslint/eslintrc": "^3.3.7",
+    "@eslint/js": "^10.0.1",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/git": "^11.0.1",
+    "@types/node": "^26.6.7",
+    "@typescript-eslint/eslint-plugin": "^8.74.0",
+    "@typescript-eslint/parser": "^8.74.0",
+    "eslint": "^10.15.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "fast-json-patch": "^3.1.1",
-    "globals": "^16.5.0",
-    "semantic-release": "^25.0.2",
-    "tsup": "^8.5.1",
-    "tsx": "^4.16.2",
-    "typescript": "^5.9.3"
+    "eslint-plugin-prettier": "^5.5.7",
+    "fast-json-patch": "^3.1.2",
+    "globals": "^17.14.0",
+    "semantic-release": "^26.0.1",
+    "tsup": "^9.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3"
   },
   "release": {
     "branches": [

@@ -17,29 +17,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
-          version: 8.6.12
+          version: 12.23.0
           run_install: false
           standalone: true
 
       - name: Use Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: '22.x'
+          node-version: '^26.13.0'
           cache: 'pnpm'
           cache-dependency-path: pnpm-lock.yaml
 
       - name: Ensure npm supports trusted publishing
         run: |
           echo "Before upgrade: node $(node --version), npm $(npm --version)"
-          npm install -g npm@^11.5.1
+          npm install -g npm@12.2.3
           echo "After upgrade: node $(node --version), npm $(npm --version)"
 
       - name: Install Dependencies
