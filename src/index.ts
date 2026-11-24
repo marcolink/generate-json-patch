@@ -5,8 +5,7 @@ export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue = JsonPrimitive | JsonObject | JsonArray;
 
 export type JsonObject =
-  | { [Key in string]: JsonValue | undefined }
-  | { [key: string]: any };
+  { [Key in string]: JsonValue | undefined } | { [key: string]: any };
 
 export type JsonArray = JsonValue[] | readonly JsonValue[];
 
