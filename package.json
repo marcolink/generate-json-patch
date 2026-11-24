@@ -34,10 +34,11 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts",
+    "benchmark": "pnpm run build && node --expose-gc benchmarks/array-diff.cjs",
     "test": "node --import tsx --test src/**/*.spec.ts",
     "test-watch": "node --import tsx --test --watch src/**/*.spec.ts",
     "test-coverage": "node --import tsx --experimental-test-coverage --test src/**/*.spec.ts",
-    "lint": "eslint --ext .ts ./src",
+    "lint": "eslint --ext .ts,.cjs ./src ./benchmarks",
     "lint-fix": "pnpm run lint --fix",
     "semantic-release": "semantic-release"
   },

@@ -16,7 +16,7 @@ Create [RFC 6902](https://datatracker.ietf.org/doc/html/rfc6902/) compliant JSON
 - Limit traversal with `maxDepth` to collapse deep trees into a single replace
 - :paw_prints: ***Is it small?*** Zero dependencies - it's ~**3 KB** (minified).
 - Ships ESM + CJS builds with types
-- :crystal_ball: ***Is it fast?*** I haven't done any performance comparison yet.
+- :crystal_ball: ***Is it fast?*** Run the [array diff benchmark](#benchmarks) to measure your workload sizes.
 - The interface is inspired by [jsondiffpatch](https://github.com/benjamine/jsondiffpatch)
 - **100%** Typescript
 
@@ -251,3 +251,35 @@ When `ignoreMove` is `false`, array reorders emit move operations instead of del
 This is implemented in `move-operations.ts` (`longestCommonSequence` + `moveOperations`) and is exercised in the tests in `src/move-operations.spec.ts`.
 
 > For more examples, check out the [tests](./src/index.spec.ts)
+
+# Benchmarks
+
+Run `pnpm install --frozen-lockfile`, then `pnpm benchmark`. The benchmark builds
+the library and measures complete patch generation for 100, 1,000, 3,000 and
+5,000 array items. It covers a single value edit with default hashing and a
+one-item rotation with a custom hash. Each generated patch is applied and checked.
+
+To compare with the implementation before the rolling-row optimization:
+
+```sh
+baseline=$(mktemp -d)
+git archive bba6db7 src | tar -x -C "$baseline"
+pnpm exec tsup "$baseline/src/index.ts" --format cjs --out-dir "$baseline/dist" --no-config
+pnpm benchmark "$baseline/dist/index.js"
+```
+
+The comparison checks exact patch equality before timing. It reports the median
+of nine runs after three warmups, alternates execution order, and runs garbage
+collection outside each timing. Results depend on hardware, runtime and input.
+
+Example comparison against `bba6db7`, Node 24.16.0 on an Apple M2 Pro:
+
+| 5,000-item input | Before | After | Speedup |
+| --- | ---: | ---: | ---: |
+| Single value edit, default hash | 244.326 ms | 135.565 ms | 1.80x |
+| One-item rotation, custom hash | 252.837 ms | 138.262 ms | 1.83x |
+
+Move detection uses one row of counters instead of a full comparison table.
+For two 5,000-item hash arrays, this reduces table storage from 25,010,001 cells
+to 5,001 counters. Its worst-case running time remains quadratic. The change
+preserves the existing contiguous-match behavior and first-left-offset tie rule.
