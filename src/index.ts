@@ -109,9 +109,8 @@ export function generateJSONPatch(
     let currentIndex = leftArr.length - 1;
     const targetHashes: string[] = [];
 
-    // This is not respecting identical arrays
     if (maxDepthReached(path)) {
-      if (JSON.stringify(leftHashes) === JSON.stringify(rightHashes)) return;
+      if (deepEqual(leftArr, rightArr)) return;
       patch.push({ op: 'replace', path: path, value: rightArr });
       return;
     }

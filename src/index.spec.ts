@@ -863,6 +863,57 @@ describe('generateJSONPatch', () => {
       ]);
     });
 
+    it('replaces same-length primitive arrays at maxDepth', () => {
+      for (const [left, right] of [
+        [[0], [1]],
+        [
+          [0, 1],
+          [1, 0],
+        ],
+      ]) {
+        const before = { x: left };
+        const after = { x: right };
+        const patch = generateJSONPatch(before, after, { maxDepth: 2 });
+        assert.deepStrictEqual(patch, [
+          { op: 'replace', path: '/x', value: right },
+        ]);
+        assert.deepStrictEqual(doPatch(before, patch), after);
+      }
+    });
+
+    it('replaces nested arrays with changed contents at maxDepth', () => {
+      const before = { specs: { colors: ['red', 'silver'] } };
+      const after = { specs: { colors: ['blue', 'silver'] } };
+      const patch = generateJSONPatch(before, after, { maxDepth: 3 });
+      assert.deepStrictEqual(patch, [
+        { op: 'replace', path: '/specs/colors', value: after.specs.colors },
+      ]);
+      assert.deepStrictEqual(doPatch(before, patch), after);
+    });
+
+    it('replaces arrays with unchanged object hashes at maxDepth', () => {
+      const before = { engine: [{ name: 'V6', hp: 125 }] };
+      const after = { engine: [{ name: 'V6', hp: 138 }] };
+      const patch = generateJSONPatch(before, after, {
+        maxDepth: 2,
+        objectHash: (value: any) => value.name,
+      });
+      assert.deepStrictEqual(patch, [
+        { op: 'replace', path: '/engine', value: after.engine },
+      ]);
+      assert.deepStrictEqual(doPatch(before, patch), after);
+    });
+
+    it('replaces root arrays with changed contents at maxDepth', () => {
+      const before = [0];
+      const after = [1];
+      const patch = generateJSONPatch(before, after, { maxDepth: 1 });
+      assert.deepStrictEqual(patch, [
+        { op: 'replace', path: '', value: after },
+      ]);
+      assert.deepStrictEqual(doPatch(before, patch), after);
+    });
+
     it('creates empty patch for arrays with object hash', () => {
       const beforeDeep = {
         obj: {
